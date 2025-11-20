@@ -1,71 +1,45 @@
 /**
  * QR Code Service
  * Generates QR codes for products containing product ID and verification URL
- * 
- * TODO: Implement QR code generation
- * - Generate QR code with product ID
- * - Include verification URL in QR data
- * - Return QR code as image buffer or data URL
  */
 
 const QRCode = require('qrcode');
 
 class QRService {
   /**
-   * Generate QR code data for a product
-   * 
-   * @param {number} productId - Product ID
-   * @param {string} baseUrl - Base URL for verification (e.g., http://localhost:5173)
-   * @returns {Promise<string>} QR code data URL or JSON string
-   * 
-   * TODO:
-   * 1. Create QR data object with productId and verification URL
-   * 2. Convert to JSON string
-   * 3. Generate QR code image using QRCode.toDataURL()
-   * 4. Return data URL or buffer
+   * Generate QR code data for a product.
+   * Returns an object with productId, verifyUrl, and the QR image (base64 data URL).
    */
-  async generateQRCode(productId, baseUrl = 'http://localhost:5173') {
-    // TODO: Create QR data object
-    // Format: { productId: 123, verifyUrl: "http://localhost:5173/verify/123" }
-    
-    // TODO: Generate QR code image
-    // Use QRCode.toDataURL() to generate image
-    // Return data URL string
+  async generateQRCode(productId, baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5173') {
+    // create the verification URL (frontend will likely handle /verify/:id)
+    const verifyUrl = `${baseUrl.replace(/\/$/, '')}/verify/${productId}`;
+
+    // QR payload (can be extended with product meta if you want)
+    const qrPayload = JSON.stringify({ productId, verifyUrl });
+
+    // generate base64 data URL image
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { errorCorrectionLevel: 'M' });
+
+    return { productId, verifyUrl, qr: qrDataUrl };
   }
 
   /**
-   * Generate QR code as image buffer
-   * 
-   * @param {number} productId - Product ID
-   * @param {string} baseUrl - Base URL for verification
-   * @returns {Promise<Buffer>} QR code image buffer
-   * 
-   * TODO:
-   * 1. Generate QR code using QRCode.toBuffer()
-   * 2. Return buffer for direct image response
+   * Generate QR code as an image buffer (for sending image directly).
    */
-  async generateQRCodeBuffer(productId, baseUrl = 'http://localhost:5173') {
-    // TODO: Generate QR code buffer
-    // Use QRCode.toBuffer()
-    // Return buffer
+  async generateQRCodeBuffer(productId, baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5173') {
+    const verifyUrl = `${baseUrl.replace(/\/$/, '')}/verify/${productId}`;
+    const qrPayload = JSON.stringify({ productId, verifyUrl });
+    const buffer = await QRCode.toBuffer(qrPayload, { errorCorrectionLevel: 'M' });
+    return buffer;
   }
 
   /**
-   * Get QR code data as JSON (for frontend to generate QR)
-   * 
-   * @param {number} productId - Product ID
-   * @param {string} baseUrl - Base URL for verification
-   * @returns {Object} QR code data object
-   * 
-   * TODO:
-   * 1. Return JSON object with productId and verifyUrl
-   * 2. Frontend can use this to generate QR code
+   * Return plain JSON data (no image) — useful if frontend handles rendering.
    */
-  getQRCodeData(productId, baseUrl = 'http://localhost:5173') {
-    // TODO: Return JSON object
-    // { productId, verifyUrl: `${baseUrl}/verify/${productId}` }
+  getQRCodeData(productId, baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5173') {
+    const verifyUrl = `${baseUrl.replace(/\/$/, '')}/verify/${productId}`;
+    return { productId, verifyUrl };
   }
 }
 
 module.exports = new QRService();
-

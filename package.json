@@ -27,6 +27,14 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KrishShah1912/SafeBite-Blockchain-Food-Traceability.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KrishShah1912/SafeBite-Blockchain-Food-Traceability/issues"
+  },
+  "homepage": "https://github.com/KrishShah1912/SafeBite-Blockchain-Food-Traceability#readme"
 }
-
