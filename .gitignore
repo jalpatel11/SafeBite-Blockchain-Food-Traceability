@@ -23,3 +23,6 @@ deployments/
 .DS_Store
 Thumbs.db
 
+# Backend data files
+safebite_store.json
+

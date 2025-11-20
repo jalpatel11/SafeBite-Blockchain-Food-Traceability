@@ -336,7 +336,7 @@ class ContractService {
       // log to journey for visibility
       const p = await store.getProduct(productId);
       p.journey.push({ at: Date.now(), action: 'UPDATE_STATUS', by: signerAddress, meta: { newStatus } });
-      fs.writeFileSync(path.join(__dirname, '..', '..', 'safebite_store.json'), JSON.stringify({/* handled in store but ok */}, null, 2));
+      // Note: storeService handles file persistence
       return { ok: true };
     }
     await this.initialize();
