@@ -10,86 +10,138 @@ const { isValidAddress, isValidProductId } = require('../utils/helpers');
 /**
  * Transfer product ownership
  * POST /api/transfers
- * 
  * Body: { signerAddress, productId, toAddress, shipmentDetails }
- * 
- * TODO:
- * 1. Validate inputs (signerAddress, productId, toAddress, shipmentDetails)
- * 2. Call contractService.transferOwnership()
- * 3. Return transaction hash
  */
 async function transferOwnership(req, res) {
   try {
-    const { signerAddress, productId, toAddress, shipmentDetails } = req.body;
-    
-    // TODO: Validate all inputs
-    // TODO: Call contractService.transferOwnership()
-    // TODO: Return transaction hash
-    
-    res.json({
+    const { signerAddress, productId, toAddress, shipmentDetails = '' } = req.body || {};
+
+    // Validate inputs
+    const missing = [];
+    if (!signerAddress) missing.push('signerAddress');
+    if (productId === undefined || productId === null) missing.push('productId');
+    if (!toAddress) missing.push('toAddress');
+    if (missing.length) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'transferOwnership',
+        message: `Missing fields: ${missing.join(', ')}`
+      });
+    }
+    if (!isValidAddress(signerAddress) || !isValidAddress(toAddress)) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'transferOwnership',
+        message: 'Invalid Ethereum address format'
+      });
+    }
+    if (!isValidProductId(productId)) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'transferOwnership',
+        message: 'Invalid productId'
+      });
+    }
+
+    // Execute transfer (mock: returns { ok:true } ; on-chain: { txHash })
+    const tx = await contractService.transferOwnership(
+      signerAddress,
+      Number(productId),
+      toAddress,
+      shipmentDetails
+    );
+
+    return res.json({
       success: true,
-      transactionHash: null, // TODO: Get from transaction
+      transactionHash: tx?.txHash || null,
       message: 'Ownership transferred successfully'
     });
   } catch (error) {
-    res.status(500).json(formatError(error, 'transferOwnership'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'transferOwnership'));
   }
 }
 
 /**
  * Batch transfer multiple products
  * POST /api/transfers/batch
- * 
- * Body: { signerAddress, productIds: [], toAddress, shipmentDetails }
- * 
- * TODO:
- * 1. Validate inputs
- * 2. Call contractService.batchTransferOwnership()
- * 3. Return transaction hash
+ * Body: { signerAddress, productIds: number[], toAddress, shipmentDetails }
  */
 async function batchTransferOwnership(req, res) {
   try {
-    const { signerAddress, productIds, toAddress, shipmentDetails } = req.body;
-    
-    // TODO: Validate inputs (productIds must be array)
-    // TODO: Call contractService.batchTransferOwnership()
-    // TODO: Return transaction hash
-    
-    res.json({
+    const { signerAddress, productIds, toAddress, shipmentDetails = '' } = req.body || {};
+
+    // Validate inputs
+    const missing = [];
+    if (!signerAddress) missing.push('signerAddress');
+    if (!Array.isArray(productIds)) missing.push('productIds');
+    if (!toAddress) missing.push('toAddress');
+    if (missing.length) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'batchTransferOwnership',
+        message: `Missing fields: ${missing.join(', ')}`
+      });
+    }
+    if (!isValidAddress(signerAddress) || !isValidAddress(toAddress)) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'batchTransferOwnership',
+        message: 'Invalid Ethereum address format'
+      });
+    }
+    const invalidIds = productIds.filter((id) => !isValidProductId(id));
+    if (invalidIds.length) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'batchTransferOwnership',
+        message: `Invalid productIds: ${invalidIds.join(', ')}`
+      });
+    }
+
+    const tx = await contractService.batchTransferOwnership(
+      signerAddress,
+      productIds.map(Number),
+      toAddress,
+      shipmentDetails
+    );
+
+    return res.json({
       success: true,
-      transactionHash: null, // TODO: Get from transaction
+      transactionHash: tx?.txHash || null,
       message: `Transferred ${productIds.length} products successfully`
     });
   } catch (error) {
-    res.status(500).json(formatError(error, 'batchTransferOwnership'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'batchTransferOwnership'));
   }
 }
 
 /**
  * Get transfer history for a product
  * GET /api/transfers/:productId
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getTransferHistory()
- * 3. Format transfer records
- * 4. Return transfer history
  */
 async function getTransferHistory(req, res) {
   try {
-    const productId = parseInt(req.params.productId);
-    
-    // TODO: Validate productId
-    // TODO: Call contractService.getTransferHistory()
-    // TODO: Format transfers (convert addresses, timestamps)
-    // TODO: Return history
-    
-    res.json({
-      success: true,
-      transfers: [] // TODO: Get from contract
-    });
+    const { productId } = req.params;
+    if (!isValidProductId(productId)) {
+      return res.status(400).json({
+        error: true, code: 400, context: 'getTransferHistory',
+        message: 'Invalid productId'
+      });
+    }
+
+    const transfers = await contractService.getTransferHistory(Number(productId));
+
+    // Normalize/format records
+    const formatted = (transfers || []).map((t) => ({
+      id: Number(t.id ?? 0),
+      productId: Number(t.productId ?? productId),
+      from: t.from || null,
+      to: t.to || null,
+      status: t.status || null,
+      createdAt: Number(t.createdAt ?? 0),
+      acceptedAt: Number(t.acceptedAt ?? 0)
+    }));
+
+    return res.json({ success: true, transfers: formatted });
   } catch (error) {
-    res.status(500).json(formatError(error, 'getTransferHistory'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'getTransferHistory'));
   }
 }
 
@@ -98,4 +150,3 @@ module.exports = {
   batchTransferOwnership,
   getTransferHistory
 };
-

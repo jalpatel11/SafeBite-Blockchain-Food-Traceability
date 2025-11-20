@@ -1,0 +1,95 @@
+{
+  "products": [
+    {
+      "productId": 0,
+      "name": "Apples",
+      "batchId": "B-42",
+      "origin": "Farm A",
+      "metadataHash": "ipfs://hash",
+      "owner": "0xabc0000000000000000000000000000000000abc",
+      "createdAt": 1763615051493,
+      "journey": [
+        {
+          "at": 1763615051493,
+          "action": "REGISTER",
+          "by": "0xabc0000000000000000000000000000000000abc",
+          "meta": {
+            "name": "Apples",
+            "batchId": "B-42",
+            "origin": "Farm A",
+            "metadataHash": "ipfs://hash"
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "at": 1763615051493,
+          "location": "Farm A",
+          "actor": "0xabc0000000000000000000000000000000000abc"
+        }
+      ]
+    },
+    {
+      "productId": 1,
+      "name": "Apples",
+      "batchId": "B-42",
+      "origin": "Farm A",
+      "metadataHash": "ipfs://hash",
+      "owner": "0xabc0000000000000000000000000000000000abc",
+      "createdAt": 1763615573649,
+      "journey": [
+        {
+          "at": 1763615573649,
+          "action": "REGISTER",
+          "by": "0xabc0000000000000000000000000000000000abc",
+          "meta": {
+            "name": "Apples",
+            "batchId": "B-42",
+            "origin": "Farm A",
+            "metadataHash": "ipfs://hash"
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "at": 1763615573649,
+          "location": "Farm A",
+          "actor": "0xabc0000000000000000000000000000000000abc"
+        }
+      ]
+    },
+    {
+      "productId": 2,
+      "name": "Apples",
+      "batchId": "B-42",
+      "origin": "Farm A",
+      "metadataHash": "ipfs://hash",
+      "owner": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "createdAt": 1763616164263,
+      "journey": [
+        {
+          "at": 1763616164263,
+          "action": "REGISTER",
+          "by": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "meta": {
+            "name": "Apples",
+            "batchId": "B-42",
+            "origin": "Farm A",
+            "metadataHash": "ipfs://hash"
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "at": 1763616164263,
+          "location": "Farm A",
+          "actor": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ],
+  "transfers": [],
+  "roles": {
+    "0xabc0000000000000000000000000000000000abc": 2
+  }
+}

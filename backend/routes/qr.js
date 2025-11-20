@@ -13,27 +13,26 @@ const { isValidProductId } = require('../utils/helpers');
  * GET /api/qr/:productId
  * 
  * Returns QR code as image (PNG)
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Get base URL from environment or request
- * 3. Generate QR code buffer
- * 4. Return image with proper content-type
  */
 router.get('/:productId', async (req, res) => {
   try {
-    const productId = parseInt(req.params.productId);
-    const baseUrl = req.query.baseUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
-    
-    // TODO: Validate productId
-    // TODO: Generate QR code buffer
-    // TODO: Set content-type to image/png
-    // TODO: Send buffer as response
-    
+    const productId = Number(req.params.productId);
+    const baseUrl = req.query.baseUrl || process.env.PUBLIC_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    // Validate product ID
+    if (!isValidProductId(productId)) {
+      return res.status(400).json({ error: true, message: 'Invalid productId' });
+    }
+
+    // Generate QR image buffer
+    const buffer = await qrService.generateQRCodeBuffer(productId, baseUrl);
+
+    // Return image
     res.setHeader('Content-Type', 'image/png');
-    // TODO: Send QR code buffer
+    return res.send(buffer);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('QR route error:', error);
+    res.status(500).json({ error: error.message || 'QR generation failed' });
   }
 });
 
@@ -42,29 +41,28 @@ router.get('/:productId', async (req, res) => {
  * GET /api/qr/:productId/data
  * 
  * Returns QR code data as JSON (frontend can generate QR from this)
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Get QR code data object
- * 3. Return JSON
  */
 router.get('/:productId/data', async (req, res) => {
   try {
-    const productId = parseInt(req.params.productId);
-    const baseUrl = req.query.baseUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
-    
-    // TODO: Validate productId
-    // TODO: Get QR code data from qrService
-    // TODO: Return JSON
-    
-    res.json({
+    const productId = Number(req.params.productId);
+    const baseUrl = req.query.baseUrl || process.env.PUBLIC_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    // Validate product ID
+    if (!isValidProductId(productId)) {
+      return res.status(400).json({ error: true, message: 'Invalid productId' });
+    }
+
+    // Get QR data JSON
+    const data = qrService.getQRCodeData(productId, baseUrl);
+
+    return res.json({
       success: true,
-      data: null // TODO: Get from qrService.getQRCodeData()
+      data
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('QR data route error:', error);
+    res.status(500).json({ error: error.message || 'QR data generation failed' });
   }
 });
 
 module.exports = router;
-

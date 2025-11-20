@@ -5,148 +5,182 @@
 
 const contractService = require('../services/contractService');
 const qrService = require('../services/qrService');
-const { formatError, parseContractError } = require('../utils/errors');
+const { formatError } = require('../utils/errors');
 const { isValidProductId } = require('../utils/helpers');
 
 /**
  * Register a new product
  * POST /api/products/register
- * 
  * Body: { signerAddress, name, batchId, origin, metadataHash }
- * 
- * TODO:
- * 1. Validate input (name, batchId, origin required)
- * 2. Call contractService.registerProduct()
- * 3. Generate QR code for the product
- * 4. Return product ID, transaction hash, and QR code
  */
 async function registerProduct(req, res) {
   try {
-    const { signerAddress, name, batchId, origin, metadataHash = '' } = req.body;
-    
-    // TODO: Validate inputs
-    // TODO: Call contractService.registerProduct()
-    // TODO: Generate QR code
-    // TODO: Return response
-    
-    res.json({
+    const { signerAddress, name, batchId, origin, metadataHash = '' } = req.body || {};
+
+    // Validate inputs
+    const missing = [];
+    if (!signerAddress) missing.push('signerAddress');
+    if (!name) missing.push('name');
+    if (!batchId) missing.push('batchId');
+    if (!origin) missing.push('origin');
+    if (missing.length) {
+      return res.status(400).json({
+        error: true,
+        code: 400,
+        context: 'registerProduct',
+        message: `Missing fields: ${missing.join(', ')}`
+      });
+    }
+
+    // Create product on chain (or mock store)
+    const result = await contractService.registerProduct(
+      signerAddress, name, batchId, origin, metadataHash
+    );
+    const productId = Number(result.productId);
+    const transactionHash = result.txHash || null; // mock mode may not return tx hash
+
+    // Generate QR for the new product
+    const qr = await qrService.generateQRCode(productId);
+
+    return res.json({
       success: true,
-      productId: null, // TODO: Get from transaction
-      transactionHash: null, // TODO: Get from transaction
-      qrCode: null // TODO: Get from qrService
+      productId,
+      transactionHash,
+      qrCode: qr.qr,
+      verifyUrl: qr.verifyUrl
     });
   } catch (error) {
-    res.status(500).json(formatError(error, 'registerProduct'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'registerProduct'));
   }
 }
 
 /**
  * Get product information
  * GET /api/products/:id
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getProduct()
- * 3. Get additional info (owner, status, authentic)
- * 4. Return formatted product data
  */
 async function getProduct(req, res) {
   try {
-    const productId = parseInt(req.params.id);
-    
-    // TODO: Validate productId
-    // TODO: Call contractService.getProduct()
-    // TODO: Get owner, status, authentic status
-    // TODO: Return formatted product
-    
-    res.json({
+    const rawId = req.params.id;
+    if (!isValidProductId(rawId)) {
+      return res.status(400).json({
+        error: true,
+        code: 400,
+        context: 'getProduct',
+        message: 'Invalid productId'
+      });
+    }
+    const productId = Number(rawId);
+
+    const product = await contractService.getProduct(productId);
+
+    // optional extras (best-effort; not all ABIs provide these)
+    let authentic = null;
+    try { authentic = await contractService.isProductAuthentic(productId); } catch (_) {}
+
+    return res.json({
       success: true,
-      product: null // TODO: Format product data
+      product: {
+        ...product,
+        authentic
+      }
     });
   } catch (error) {
-    res.status(500).json(formatError(error, 'getProduct'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'getProduct'));
   }
 }
 
 /**
  * Get product journey
  * GET /api/products/:id/journey
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getProductJourney()
- * 3. Return journey array
  */
 async function getProductJourney(req, res) {
   try {
-    const productId = parseInt(req.params.id);
-    
-    // TODO: Validate productId
-    // TODO: Call contractService.getProductJourney()
-    // TODO: Return journey
-    
-    res.json({
-      success: true,
-      journey: [] // TODO: Get from contract
-    });
+    const rawId = req.params.id;
+    if (!isValidProductId(rawId)) {
+      return res.status(400).json({
+        error: true,
+        code: 400,
+        context: 'getProductJourney',
+        message: 'Invalid productId'
+      });
+    }
+    const productId = Number(rawId);
+
+    const journey = await contractService.getProductJourney(productId);
+    return res.json({ success: true, journey });
   } catch (error) {
-    res.status(500).json(formatError(error, 'getProductJourney'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'getProductJourney'));
   }
 }
 
 /**
  * Get complete product provenance
  * GET /api/products/:id/provenance
- * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getCompleteProvenance()
- * 3. Parse JSON string
- * 4. Return provenance object
  */
 async function getProductProvenance(req, res) {
   try {
-    const productId = parseInt(req.params.id);
-    
-    // TODO: Validate productId
-    // TODO: Call contractService.getCompleteProvenance()
-    // TODO: Parse JSON string
-    // TODO: Return provenance
-    
-    res.json({
-      success: true,
-      provenance: {} // TODO: Parse from contract
-    });
+    const rawId = req.params.id;
+    if (!isValidProductId(rawId)) {
+      return res.status(400).json({
+        error: true,
+        code: 400,
+        context: 'getProductProvenance',
+        message: 'Invalid productId'
+      });
+    }
+    const productId = Number(rawId);
+
+    // contractService returns JSON string in our implementation
+    const provenanceJson = await contractService.getCompleteProvenance(productId);
+    let provenance;
+    try { provenance = JSON.parse(provenanceJson); }
+    catch { provenance = provenanceJson; } // if ABI returns array directly
+
+    return res.json({ success: true, provenance });
   } catch (error) {
-    res.status(500).json(formatError(error, 'getProductProvenance'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'getProductProvenance'));
   }
 }
 
 /**
- * List products (filtered by role/ownership)
- * GET /api/products?owner=address&role=number
- * 
- * TODO:
- * 1. Get optional query params (owner, role)
- * 2. Get product count
- * 3. Fetch products (if owner specified, filter by owner)
- * 4. Return product list
+ * List products (optionally filter by owner)
+ * GET /api/products?owner=0x...&role=...
  */
 async function listProducts(req, res) {
   try {
-    const { owner, role } = req.query;
-    
-    // TODO: Get product count
-    // TODO: If owner specified, fetch products owned by that address
-    // TODO: Return list of products
-    
-    res.json({
+    const { owner } = req.query;
+
+    // Get list (mock: quick; on-chain: reads products)
+    const all = await contractService.listProducts();
+
+    // If owner filter requested, enrich each item to check current owner
+    let products = all;
+    if (owner) {
+      const target = String(owner).toLowerCase();
+      const detailed = await Promise.all(
+        all.map(async (p) => {
+          try { return await contractService.getProduct(Number(p.productId)); }
+          catch { return null; }
+        })
+      );
+      products = detailed
+        .filter(Boolean)
+        .filter(p => (p.owner || '').toLowerCase() === target)
+        .map(p => ({ productId: p.productId, name: p.name, batchId: p.batchId, origin: p.origin, owner: p.owner }));
+    }
+
+    return res.json({
       success: true,
-      products: [], // TODO: Fetch products
-      count: 0 // TODO: Get count
+      products,
+      count: products.length
     });
   } catch (error) {
-    res.status(500).json(formatError(error, 'listProducts'));
+    const status = error.status || 500;
+    return res.status(status).json(formatError(error, 'listProducts'));
   }
 }
 
@@ -157,4 +191,3 @@ module.exports = {
   getProductProvenance,
   listProducts
 };
-

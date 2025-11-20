@@ -4,53 +4,60 @@
  */
 
 /**
- * Create standardized error response
- * 
- * @param {Error} error - Error object
- * @param {string} context - Context where error occurred
- * @returns {Object} Formatted error response
- * 
- * TODO:
- * 1. Parse error message from blockchain transactions
- * 2. Extract user-friendly error messages
- * 3. Return formatted error object with status code
+ * Format an error consistently.
+ * Adds HTTP code and context.
  */
 function formatError(error, context = 'Unknown') {
-  // TODO: Parse different error types
-  // - Contract revert errors
-  // - Network errors
-  // - Validation errors
-  // - Return { message, code, context }
-  
+  // If it already has a numeric HTTP status, keep it
+  const code = error.status || 500;
+
+  // Normalize message
+  const message =
+    (error && error.message) ||
+    (typeof error === 'string' ? error : 'An unknown error occurred');
+
+  // You can add friendly mapping here for blockchain revert messages etc.
+  const friendly = parseContractError(error);
+
   return {
     error: true,
-    message: error.message || 'An error occurred',
-    context: context,
-    code: error.code || 'UNKNOWN_ERROR'
+    code,
+    context,
+    message: friendly || message
   };
 }
 
 /**
- * Handle contract transaction errors
- * 
- * @param {Error} error - Transaction error
- * @returns {Object} User-friendly error message
- * 
- * TODO:
- * 1. Parse common contract errors:
- *    - "caller is not a producer" -> "You don't have permission"
- *    - "product does not exist" -> "Product not found"
- *    - "insufficient funds" -> "Insufficient balance"
- * 2. Return user-friendly message
+ * Convert low-level blockchain or app errors to user-friendly text
  */
 function parseContractError(error) {
-  // TODO: Parse error message
-  // Extract meaningful error from contract revert
-  // Return user-friendly message
+  if (!error || !error.message) return null;
+  const msg = error.message.toLowerCase();
+
+  if (msg.includes('caller is not a producer'))
+    return "You don't have permission for this action.";
+  if (msg.includes('product does not exist'))
+    return 'Product not found.';
+  if (msg.includes('insufficient funds'))
+    return 'Insufficient balance.';
+  if (msg.includes('revert'))
+    return 'Smart contract reverted the transaction.';
+  if (msg.includes('network'))
+    return 'Blockchain network error. Please try again later.';
+  return null; // default
+}
+
+/**
+ * Helper to make an HTTP-style error object
+ */
+function httpError(status, message) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
 }
 
 module.exports = {
   formatError,
-  parseContractError
+  parseContractError,
+  httpError
 };
-
