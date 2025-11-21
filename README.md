@@ -41,7 +41,7 @@ Ethereum-compatible network (Hardhat for local development, configurable for tes
 
 ## Project Structure
 
-
+```
 SafeBite-Blockchain-Food-Traceability/
 │
 ├── contracts/                    # Smart contract source code
@@ -68,7 +68,7 @@ SafeBite-Blockchain-Food-Traceability/
 │
 └── deployments/                  # Deployment artifacts
     └── local.json                # Contract addresses and ABIs
-
+```
 
 ## Role Definitions
 
@@ -108,14 +108,15 @@ SafeBite-Blockchain-Food-Traceability/
 
 ### 1. Clone Repository
 
-bash
+```bash
 git clone https://github.com/jalpatel11/SafeBite-Blockchain-Food-Traceability.git
 cd SafeBite-Blockchain-Food-Traceability
+```
 
 
 ### 2. Install Dependencies
 
-bash
+```bash
 # Install root dependencies (Hardhat, deployment tools)
 npm install
 
@@ -126,79 +127,78 @@ npm install
 # Install frontend dependencies
 cd ../frontend
 npm install
-
+```
 
 ### 3. Start Local Blockchain
-
-bash
+```bash
 # From project root
 npm run node
-
+```
 
 This starts a local Hardhat network on http://127.0.0.1:8545 with Chain ID 1337.
 
 ### 4. Deploy Smart Contracts
 
 In a new terminal:
-
-bash
+```bash
 npm run deploy:local
-
+```
 
 Contract addresses are saved to deployments/local.json.
 
 ### 5. Configure Backend
-
-bash
+```bash
 cd backend
 cp .env.example .env
-
+```
 
 Edit .env with contract addresses from deployments/local.json:
 
 env
+```
 RPC_URL=http://127.0.0.1:8545
 ACCESS_CONTROL_CONTRACT_ADDRESS=<from deployments/local.json>
 SUPPLY_CHAIN_CONTRACT_ADDRESS=<from deployments/local.json>
 PORT=3000
-
+```
 
 Start backend server:
 
-bash
+```bash
 npm start
-
+```
 
 ### 6. Configure Frontend
 
-bash
+```bash
 cd frontend
 cp .env.example .env
-
+```
 
 Edit .env:
 
 env
+```
 VITE_API_URL=http://localhost:3000
 VITE_ACCESS_CONTROL_CONTRACT_ADDRESS=<from deployments/local.json>
 VITE_SUPPLY_CHAIN_CONTRACT_ADDRESS=<from deployments/local.json>
 VITE_RPC_URL=http://127.0.0.1:8545
 VITE_CHAIN_ID=1337
-
+```
 
 Start frontend development server:
 
-bash
+```bash
 npm run dev
-
+```
 
 ### 7. Assign Roles
 
 In a new terminal:
 
-bash
+```bash
 ./assign-roles.sh
-
+```
 
 This assigns roles to the default Hardhat test accounts.
 
@@ -262,22 +262,22 @@ See backend/README.md for complete API endpoint documentation.
 
 ### Running Tests
 
-bash
+```bash
 # Backend tests
 cd backend
 npm test
 
 # Contract tests (if implemented)
 npm run test
-
+```
 
 ### Building for Production
 
-bash
+```bash
 # Frontend production build
 cd frontend
 npm run build
-
+```
 
 ### Environment Variables
 
