@@ -2,28 +2,58 @@
 
 ## Overview
 
-The backend API server for the SafeBite blockchain food traceability system. This Express.js server provides REST API endpoints that allow the frontend application to interact with the smart contracts deployed on the blockchain. The backend handles contract interactions, data validation, and provides additional services like QR code generation.
+The SafeBite backend is an Express.js REST API server that provides an abstraction layer between the frontend application and blockchain smart contracts. It handles smart contract interactions, business logic, data validation, and additional services such as QR code generation.
 
 ## Architecture
 
-The backend follows a layered architecture:
+The backend follows a layered architecture pattern:
 
-- **Routes**: Define API endpoints and map them to controller functions
-- **Controllers**: Handle HTTP requests, validate input, and call services
-- **Services**: Contain business logic and smart contract interactions
-- **Utils**: Provide helper functions for error handling and data processing
+- **Routes**: Define API endpoints and HTTP methods
+- **Controllers**: Handle HTTP requests, validate input, orchestrate business logic
+- **Services**: Implement business logic and smart contract interactions
+- **Utils**: Provide shared utilities for error handling and data processing
 
-## Setup Instructions
+## Project Structure
 
-### 1. Install Dependencies
+```
+backend/
+│
+├── server.js                    # Express server configuration and startup
+│
+├── routes/                      # API route definitions
+│   ├── products.js              # Product management endpoints
+│   ├── transfers.js             # Ownership transfer endpoints
+│   ├── verification.js         # Verification endpoints
+│   ├── roles.js                 # Role management endpoints
+│   └── qr.js                    # QR code generation endpoints
+│
+├── controllers/                 # Request handlers
+│   ├── productController.js     # Product operation handlers
+│   ├── transferController.js    # Transfer operation handlers
+│   ├── verificationController.js # Verification handlers
+│   └── roleController.js       # Role management handlers
+│
+├── services/                    # Business logic layer
+│   ├── contractService.js       # Smart contract interaction service
+│   └── qrService.js            # QR code generation service
+│
+├── utils/                       # Utility modules
+│   ├── errors.js               # Error handling utilities
+│   └── helpers.js              # Common helper functions
+│
+└── tests/                       # Test suite
+    └── backend.test.js          # API endpoint tests
+```
+
+## Setup
+
+### Installation
 
 ```bash
 npm install
 ```
 
-This installs all required packages including Express, Ethers.js, and QR code generation library.
-
-### 2. Environment Configuration
+### Environment Configuration
 
 Copy the example environment file:
 
@@ -31,119 +61,219 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit the `.env` file and configure:
+Configure the following variables in `.env`:
 
-- `RPC_URL`: Ethereum RPC endpoint (use `http://127.0.0.1:8545` for local Hardhat network)
-- `ACCESS_CONTROL_CONTRACT_ADDRESS`: Address of deployed SafeBiteAccessRoles contract
-- `SUPPLY_CHAIN_CONTRACT_ADDRESS`: Address of deployed SafeBiteSupplyChain contract
-- `PORT`: Server port number (default: 3000)
-- `FRONTEND_URL`: Frontend application URL for QR code generation
+```env
+RPC_URL=http://127.0.0.1:8545
+ACCESS_CONTROL_CONTRACT_ADDRESS=0x...
+SUPPLY_CHAIN_CONTRACT_ADDRESS=0x...
+PORT=3000
+```
 
-### 3. Run the Server
+Contract addresses are available in `../deployments/local.json` after deployment.
 
-Development mode with auto-reload:
+### Running the Server
+
+**Development mode** (with auto-reload):
 
 ```bash
 npm run dev
 ```
 
-Production mode:
+**Production mode**:
 
 ```bash
 npm start
 ```
 
-The server starts on `http://localhost:3000` by default.
+The server runs on `http://localhost:3000` by default.
+
+## Request Flow
+
+1. **Client Request**: Frontend sends HTTP request to API endpoint
+2. **Route Handler**: Route file matches request to controller function
+3. **Controller**: Validates input, calls appropriate service
+4. **Service**: Executes business logic, interacts with smart contracts
+5. **Response**: Controller formats and returns response to client
 
 ## API Endpoints
 
 ### Products
 
-- `POST /api/products/register` - Register a new product
-- `GET /api/products/:id` - Get product information
-- `GET /api/products/:id/journey` - Get product journey timeline
-- `GET /api/products/:id/provenance` - Get complete product provenance
-- `GET /api/products` - List products with optional filters
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/products/register` | Register a new product |
+| GET | `/api/products/:id` | Get product by ID |
+| GET | `/api/products/:id/journey` | Get product journey timeline |
+| GET | `/api/products/:id/provenance` | Get complete product provenance |
+| GET | `/api/products` | List products with optional filters |
 
 ### Transfers
 
-- `POST /api/transfers` - Transfer product ownership
-- `POST /api/transfers/batch` - Batch transfer multiple products
-- `GET /api/transfers/:productId` - Get transfer history for a product
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/transfers` | Transfer product ownership |
+| POST | `/api/transfers/batch` | Batch transfer multiple products |
+| GET | `/api/transfers/:productId` | Get transfer history for a product |
 
 ### Verification
 
-- `POST /api/verification/authenticity` - Verify product authenticity
-- `POST /api/verification/quality` - Perform quality check
-- `POST /api/verification/compliance` - Perform compliance check
-- `GET /api/verification/:productId` - Get verification history
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/verification/authenticity` | Verify product authenticity |
+| POST | `/api/verification/quality` | Perform quality check |
+| POST | `/api/verification/compliance` | Perform compliance check |
+| GET | `/api/verification/:productId` | Get verification history |
 
 ### Roles
 
-- `GET /api/roles/check/:address` - Check role of an address
-- `GET /api/roles/my-role` - Get current user's role
-- `POST /api/roles/grant` - Grant role to address (admin only)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/roles/check/:address` | Check role of an address |
+| POST | `/api/roles/grant-dev` | Grant role (development only) |
+| POST | `/api/roles/batch-grant-dev` | Batch grant roles (development only) |
 
 ### QR Codes
 
-- `GET /api/qr/:productId` - Generate QR code image
-- `GET /api/qr/:productId/data` - Get QR code data as JSON
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/qr/:productId` | Get QR code image |
+| GET | `/api/qr/:productId/data` | Get QR code data as JSON |
 
 ### Health Check
 
-- `GET /health` - Server health check endpoint
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Server health check |
 
-## Project Structure
+## Core Services
 
-```
-backend/
-├── controllers/          # Request handlers
-│   ├── productController.js
-│   ├── transferController.js
-│   ├── verificationController.js
-│   └── roleController.js
-├── routes/              # API route definitions
-│   ├── products.js
-│   ├── transfers.js
-│   ├── verification.js
-│   ├── roles.js
-│   └── qr.js
-├── services/            # Business logic layer
-│   ├── contractService.js    # Smart contract interactions
-│   └── qrService.js          # QR code generation
-├── utils/               # Utility functions
-│   ├── errors.js        # Error handling utilities
-│   └── helpers.js       # Helper functions
-├── server.js            # Express server entry point
-├── package.json         # Dependencies
-├── .env.example         # Environment variable template
-└── README.md            # This file
-```
+### contractService.js
+
+Manages all smart contract interactions:
+
+- Initializes contract instances with provider and signer
+- Provides methods for all contract operations
+- Handles transaction signing and confirmation
+- Formats contract responses for API consumption
+- Manages certificate generation and metadata merging
+
+### qrService.js
+
+Handles QR code generation:
+
+- Generates QR code images for products
+- Creates QR code data payloads
+- Supports multiple QR code formats
+
+## Error Handling
+
+The backend implements standardized error handling:
+
+- Contract errors are parsed for user-friendly messages
+- HTTP status codes follow REST conventions
+- Error responses include descriptive messages
+- Validation errors are returned with field-level details
 
 ## Dependencies
 
 - **express**: Web application framework
-- **ethers**: Ethereum JavaScript library for contract interactions
+- **ethers**: Ethereum JavaScript library (v6)
 - **cors**: Cross-origin resource sharing middleware
 - **dotenv**: Environment variable management
-- **body-parser**: Request body parsing middleware
-- **qrcode**: QR code image generation library
-- **nodemon**: Development auto-reload tool (dev dependency)
+- **qrcode**: QR code image generation
+- **nodemon**: Development auto-reload (dev dependency)
+- **jest**: Testing framework (dev dependency)
+- **supertest**: HTTP assertion library (dev dependency)
 
-## Implementation Status
+## Testing
 
-The backend structure is complete with all routes, controllers, and services defined. Each file contains TODO comments with detailed instructions for implementation. The implementation involves:
+Run the test suite:
 
-1. Initializing contract service with provider and contract instances
-2. Implementing contract interaction methods in contractService.js
-3. Implementing controller functions to handle requests
-4. Adding validation and error handling
-5. Implementing QR code generation service
+```bash
+npm test
+```
 
-## Development Notes
+Tests cover:
+- API endpoint functionality
+- Request validation
+- Error handling
+- Contract interaction mocking
 
-- All contract interactions use Ethers.js v6
-- Contract ABIs should be loaded from the artifacts folder
-- Contract addresses are loaded from environment variables
-- Error handling should parse contract revert messages for user-friendly errors
-- All API responses follow a consistent format with success/error indicators
+## Development Guidelines
+
+### Adding New Endpoints
+
+1. Define route in appropriate route file
+2. Create controller function
+3. Implement service method if needed
+4. Add error handling
+5. Write tests
+
+### Contract Interaction
+
+All contract interactions should go through `contractService.js`:
+
+```javascript
+const contractService = require('./services/contractService');
+
+// Example: Register a product
+const result = await contractService.registerProduct(
+  name, batchId, origin, metadataHash
+);
+```
+
+### Error Handling
+
+Use the error utilities:
+
+```javascript
+const { formatError } = require('./utils/errors');
+
+try {
+  // operation
+} catch (error) {
+  return res.status(500).json(formatError(error, 'operationName'));
+}
+```
+
+## Common Issues
+
+### Cannot Connect to Blockchain
+- Verify Hardhat node is running: `npm run node`
+- Check `RPC_URL` in `.env` matches Hardhat network
+- Ensure network is accessible
+
+### Contract Address Not Found
+- Deploy contracts: `npm run deploy:local`
+- Verify addresses in `deployments/local.json`
+- Update `.env` with correct addresses
+
+### Port Already in Use
+- Check if another process is using port 3000
+- Change `PORT` in `.env` to an available port
+- Update frontend `VITE_API_URL` accordingly
+
+### Transaction Failures
+- Verify account has sufficient balance (test ETH)
+- Check role assignments are correct
+- Ensure contract addresses are valid
+- Review contract revert messages in error logs
+
+## Production Considerations
+
+- Use environment-specific configuration
+- Implement proper authentication and authorization
+- Add rate limiting for API endpoints
+- Set up monitoring and logging
+- Use secure RPC endpoints
+- Implement request validation middleware
+- Add API documentation (Swagger/OpenAPI)
+
+## Security Notes
+
+- Development endpoints (`grant-dev`, `batch-grant-dev`) should be disabled in production
+- Private keys should never be stored in code or environment variables
+- Implement proper CORS policies for production
+- Use HTTPS in production environments
+- Validate and sanitize all user inputs
