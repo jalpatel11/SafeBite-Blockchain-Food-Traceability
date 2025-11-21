@@ -355,13 +355,42 @@ emit StatusUpdated(productId, oldStatus, newStatus, msg.sender);
 
 // Verify product authenticity (anyone can verify)
 // Checks if product hasn't been tampered with
+// Requires both quality check and compliance check to have been performed and passed
 // Returns true if product is authentic
 function verifyAuthenticity(
 uint256 productId,
 string memory notes
 ) external productExists(productId) returns (bool isValid) {
 Product memory product = _products[productId];
-bool isAuthentic = bytes(product.metadataHash).length > 0 && product.producer != address(0);
+Verification[] memory verifications = _verificationHistory[productId];
+bool hasQualityCheck = false;
+bool hasComplianceCheck = false;
+bool qualityPassed = false;
+bool compliancePassed = false;
+// Check verification history for quality and compliance checks
+for (uint256 i = 0; i < verifications.length; i++) {
+if (verifications[i].vType == VerificationType.QUALITY_CHECK) {
+hasQualityCheck = true;
+if (verifications[i].result) {
+qualityPassed = true;
+}
+}
+if (verifications[i].vType == VerificationType.REGULATORY_APPROVAL) {
+hasComplianceCheck = true;
+if (verifications[i].result) {
+compliancePassed = true;
+}
+}
+}
+// Product is authentic only if:
+// 1. Both quality check and compliance check have been performed
+// 2. Both checks passed (quality score >= 50, compliance = true)
+// 3. Metadata hash exists (contains certificate information)
+// 4. Producer address is valid
+bool isAuthentic = hasQualityCheck && hasComplianceCheck &&
+qualityPassed && compliancePassed &&
+bytes(product.metadataHash).length > 0 &&
+product.producer != address(0);
 Verification memory verification = Verification({
 verifier: msg.sender,
 timestamp: block.timestamp,
@@ -381,10 +410,13 @@ return isAuthentic;
 // Perform quality check on product
 // Only RETAILER or REGULATOR can perform quality checks
 // Quality score should be 0-100
+// If certificateHash is provided and quality check passes, stores it in metadataHash
+// Backend should merge with existing metadataHash before calling
 function performQualityCheck(
 uint256 productId,
 uint8 qualityScore,
-string memory notes
+string memory notes,
+string memory certificateHash
 ) external productExists(productId) {
 require(
 accessControl.hasRole(msg.sender, SafeBiteAccessRoles.Role.RETAILER) ||
@@ -401,17 +433,26 @@ result: passed,
 notes: notes
 });
 _verificationHistory[productId].push(verification);
+// Store certificate hash in metadataHash if quality check passes and hash is provided
+// Backend should merge with existing metadataHash (e.g., from compliance) before calling
+if (passed && bytes(certificateHash).length > 0) {
+_products[productId].metadataHash = certificateHash;
+emit ProductMetadataUpdated(productId, certificateHash);
+}
 emit ProductVerified(productId, msg.sender, VerificationType.QUALITY_CHECK, passed);
 }
 
 // Check regulatory compliance
 // Only REGULATOR role can perform compliance checks
 // Stores certificate hash if product is compliant
+// If metadataHash already exists, it should contain merged certificate data (handled by backend)
+// Automatically verifies authenticity if both quality and compliance checks have passed
 function checkCompliance(
 uint256 productId,
 bool compliant,
 string memory certificateHash
 ) external productExists(productId) onlyRegulator {
+Product memory product = _products[productId];
 Verification memory verification = Verification({
 verifier: msg.sender,
 timestamp: block.timestamp,
@@ -420,12 +461,60 @@ result: compliant,
 notes: certificateHash
 });
 _verificationHistory[productId].push(verification);
+// Store certificate hash in metadataHash if compliant
+// Backend should merge with existing metadataHash (e.g., quality certificate) before calling
 if (compliant && bytes(certificateHash).length > 0) {
 _products[productId].metadataHash = certificateHash;
 emit ProductMetadataUpdated(productId, certificateHash);
 }
 emit ComplianceChecked(productId, msg.sender, compliant);
 emit ProductVerified(productId, msg.sender, VerificationType.REGULATORY_APPROVAL, compliant);
+// Auto-verify authenticity if both quality and compliance checks have passed
+// This happens automatically when compliance check completes successfully
+if (compliant) {
+// Get updated verification history (includes the compliance check we just added)
+Verification[] memory verifications = _verificationHistory[productId];
+bool hasQualityCheck = false;
+bool hasComplianceCheck = false;
+bool qualityPassed = false;
+bool compliancePassed = false;
+// Check verification history for quality and compliance checks
+for (uint256 i = 0; i < verifications.length; i++) {
+if (verifications[i].vType == VerificationType.QUALITY_CHECK) {
+hasQualityCheck = true;
+if (verifications[i].result) {
+qualityPassed = true;
+}
+}
+if (verifications[i].vType == VerificationType.REGULATORY_APPROVAL) {
+hasComplianceCheck = true;
+if (verifications[i].result) {
+compliancePassed = true;
+}
+}
+}
+// Get current metadataHash (may have been updated above)
+string memory currentMetadataHash = _products[productId].metadataHash;
+// Auto-verify if all conditions are met
+bool isAuthentic = hasQualityCheck && hasComplianceCheck &&
+qualityPassed && compliancePassed &&
+bytes(currentMetadataHash).length > 0 &&
+product.producer != address(0);
+if (isAuthentic && !_authenticityFlags[productId]) {
+_authenticityFlags[productId] = true;
+emit AuthenticityConfirmed(productId, msg.sender);
+// Also record an authenticity verification event
+Verification memory autoVerification = Verification({
+verifier: msg.sender,
+timestamp: block.timestamp,
+vType: VerificationType.AUTHENTICITY,
+result: true,
+notes: "Auto-verified: Quality and compliance checks completed"
+});
+_verificationHistory[productId].push(autoVerification);
+emit ProductVerified(productId, msg.sender, VerificationType.AUTHENTICITY, true);
+}
+}
 }
 
 // Get current owner/custodian of a product
