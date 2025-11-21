@@ -28,12 +28,9 @@ export const productAPI = {
    * Register a new product
    * POST /api/products/register
    * 
-   * TODO:
-   * 1. Make POST request with product data
-   * 2. Return response data
+   * Makes POST request with product data and returns response.
    */
   register: async (data) => {
-    // TODO: Implement
     return await api.post('/api/products/register', data);
   },
 
@@ -41,12 +38,9 @@ export const productAPI = {
    * Get product by ID
    * GET /api/products/:id
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return product data
+   * Makes GET request and returns product data.
    */
   getById: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/products/${productId}`);
   },
 
@@ -54,12 +48,9 @@ export const productAPI = {
    * Get product journey
    * GET /api/products/:id/journey
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return journey array
+   * Makes GET request and returns journey array.
    */
   getJourney: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/products/${productId}/journey`);
   },
 
@@ -67,12 +58,9 @@ export const productAPI = {
    * Get product provenance
    * GET /api/products/:id/provenance
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return provenance data
+   * Makes GET request and returns provenance data.
    */
   getProvenance: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/products/${productId}/provenance`);
   },
 
@@ -80,12 +68,9 @@ export const productAPI = {
    * List products
    * GET /api/products
    * 
-   * TODO:
-   * 1. Make GET request with optional query params
-   * 2. Return products array
+   * Makes GET request with optional query params and returns products array.
    */
   list: async (params = {}) => {
-    // TODO: Implement
     return await api.get('/api/products', { params });
   }
 };
@@ -98,12 +83,9 @@ export const transferAPI = {
    * Transfer ownership
    * POST /api/transfers
    * 
-   * TODO:
-   * 1. Make POST request
-   * 2. Return transaction hash
+   * Makes POST request and returns transaction hash.
    */
   transfer: async (data) => {
-    // TODO: Implement
     return await api.post('/api/transfers', data);
   },
 
@@ -111,12 +93,9 @@ export const transferAPI = {
    * Batch transfer
    * POST /api/transfers/batch
    * 
-   * TODO:
-   * 1. Make POST request
-   * 2. Return transaction hash
+   * Makes POST request and returns transaction hash.
    */
   batchTransfer: async (data) => {
-    // TODO: Implement
     return await api.post('/api/transfers/batch', data);
   },
 
@@ -124,12 +103,9 @@ export const transferAPI = {
    * Get transfer history
    * GET /api/transfers/:productId
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return transfer history
+   * Makes GET request and returns transfer history.
    */
   getHistory: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/transfers/${productId}`);
   }
 };
@@ -155,12 +131,9 @@ export const verificationAPI = {
    * Perform quality check
    * POST /api/verification/quality
    * 
-   * TODO:
-   * 1. Make POST request
-   * 2. Return transaction hash
+   * Makes POST request and returns transaction hash.
    */
   performQualityCheck: async (data) => {
-    // TODO: Implement
     return await api.post('/api/verification/quality', data);
   },
 
@@ -199,12 +172,9 @@ export const roleAPI = {
    * Check role
    * GET /api/roles/check/:address
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return role information
+   * Makes GET request and returns role information.
    */
   check: async (address) => {
-    // TODO: Implement
     return await api.get(`/api/roles/check/${address}`);
   },
 
@@ -212,12 +182,9 @@ export const roleAPI = {
    * Get my role
    * GET /api/roles/my-role?address=0x...
    * 
-   * TODO:
-   * 1. Make GET request with address query param
-   * 2. Return role
+   * Makes GET request with address query param and returns role.
    */
   getMyRole: async (address) => {
-    // TODO: Implement
     return await api.get('/api/roles/my-role', { params: { address } });
   }
 };
@@ -230,12 +197,9 @@ export const qrAPI = {
    * Get QR code image
    * GET /api/qr/:productId
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return image URL or blob
+   * Makes GET request and returns image blob.
    */
   getImage: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/qr/${productId}`, { responseType: 'blob' });
   },
 
@@ -243,12 +207,9 @@ export const qrAPI = {
    * Get QR code data
    * GET /api/qr/:productId/data
    * 
-   * TODO:
-   * 1. Make GET request
-   * 2. Return QR data object
+   * Makes GET request and returns QR data object.
    */
   getData: async (productId) => {
-    // TODO: Implement
     return await api.get(`/api/qr/${productId}/data`);
   }
 };
