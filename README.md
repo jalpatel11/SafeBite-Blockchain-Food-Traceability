@@ -66,11 +66,8 @@ SafeBite-Blockchain-Food-Traceability/
 ├── scripts/                      # Deployment scripts
 │   └── deploy-local.js           # Local network deployment
 │
-├── deployments/                  # Deployment artifacts
-│   └── local.json                # Contract addresses and ABIs
-│
-├── assign-roles.sh               # Script to assign roles to test accounts
-└── reset-and-setup.sh            # Script to reset and setup local environment
+└── deployments/                  # Deployment artifacts
+    └── local.json                # Contract addresses and ABIs
 ```
 
 ## Role Definitions
@@ -116,6 +113,7 @@ git clone https://github.com/jalpatel11/SafeBite-Blockchain-Food-Traceability.gi
 cd SafeBite-Blockchain-Food-Traceability
 ```
 
+
 ### 2. Install Dependencies
 
 ```bash
@@ -132,34 +130,32 @@ npm install
 ```
 
 ### 3. Start Local Blockchain
-
 ```bash
 # From project root
 npm run node
 ```
 
-This starts a local Hardhat network on `http://127.0.0.1:8545` with Chain ID 1337.
+This starts a local Hardhat network on http://127.0.0.1:8545 with Chain ID 1337.
 
 ### 4. Deploy Smart Contracts
 
 In a new terminal:
-
 ```bash
 npm run deploy:local
 ```
 
-Contract addresses are saved to `deployments/local.json`.
+Contract addresses are saved to deployments/local.json.
 
 ### 5. Configure Backend
-
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Edit `.env` with contract addresses from `deployments/local.json`:
+Edit .env with contract addresses from deployments/local.json:
 
-```env
+env
+```
 RPC_URL=http://127.0.0.1:8545
 ACCESS_CONTROL_CONTRACT_ADDRESS=<from deployments/local.json>
 SUPPLY_CHAIN_CONTRACT_ADDRESS=<from deployments/local.json>
@@ -179,9 +175,10 @@ cd frontend
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit .env:
 
-```env
+env
+```
 VITE_API_URL=http://localhost:3000
 VITE_ACCESS_CONTROL_CONTRACT_ADDRESS=<from deployments/local.json>
 VITE_SUPPLY_CHAIN_CONTRACT_ADDRESS=<from deployments/local.json>
