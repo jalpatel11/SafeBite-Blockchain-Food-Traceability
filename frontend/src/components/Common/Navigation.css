@@ -1,0 +1,226 @@
+.main-navigation {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--primary-green-bg);
+  box-shadow: 0 4px 12px var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 0;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-brand h1 {
+  font-size: 1.75rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  padding: 0.6rem 1.25rem;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-link:hover {
+  background: var(--primary-green-bg);
+  color: var(--primary-green);
+}
+
+.nav-link.active {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 2px 8px var(--shadow-sm);
+}
+
+.nav-link.current-role {
+  border: 2px solid var(--primary-green);
+}
+
+.role-indicator {
+  font-size: 0.7rem;
+  background: var(--primary-green-bg);
+  color: var(--primary-green);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-link.active .role-indicator {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.nav-wallet {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wallet-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--primary-green-bg);
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--primary-green-light);
+}
+
+.wallet-role-badge {
+  font-size: 0.75rem;
+  color: white;
+  background: var(--gradient-primary);
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px var(--shadow-sm);
+}
+
+.wallet-address {
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.btn-disconnect-small {
+  background: var(--error);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 4px var(--shadow-sm);
+}
+
+.btn-disconnect-small:hover {
+  background: #C0392B;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--shadow-md);
+}
+
+.btn-connect-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 12px var(--shadow-md);
+}
+
+.btn-connect-nav:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--shadow-lg);
+}
+
+.btn-connect-nav:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.metamask-icon-small {
+  width: 18px;
+  height: 18px;
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.nav-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: #c33;
+  font-size: 0.75rem;
+  max-width: 200px;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .nav-wallet {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wallet-info-compact {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
