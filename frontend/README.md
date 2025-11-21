@@ -1,150 +1,308 @@
-# SafeBite Frontend
+# SafeBite Frontend Application
 
 ## Overview
 
-React-based web application for the SafeBite blockchain food traceability system. The frontend provides a user interface for all stakeholders in the supply chain to interact with the blockchain through MetaMask wallet integration. The application includes role-based dashboards, product management, QR code scanning, and verification features.
+The SafeBite frontend is a React.js single-page application that provides role-based interfaces for all stakeholders in the food supply chain. It integrates with MetaMask for blockchain transactions and communicates with the backend API for data operations.
 
-## Setup Instructions
+## Architecture
 
-### 1. Install Dependencies
+The application follows a component-based architecture with clear separation of concerns:
 
-```bash
-npm install
-```
-
-This installs React, React Router, Ethers.js, and other required packages.
-
-### 2. Environment Configuration
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Edit the `.env` file and configure:
-
-- `VITE_API_URL`: Backend API URL (default: `http://localhost:3000`)
-- `VITE_ACCESS_CONTROL_CONTRACT_ADDRESS`: Address of deployed access control contract
-- `VITE_SUPPLY_CHAIN_CONTRACT_ADDRESS`: Address of deployed supply chain contract
-- `VITE_RPC_URL`: Ethereum RPC endpoint (default: `http://127.0.0.1:8545`)
-- `VITE_CHAIN_ID`: Network chain ID (default: `1337` for local Hardhat)
-
-### 3. Run Development Server
-
-```bash
-npm run dev
-```
-
-The application starts on `http://localhost:5173` and opens automatically in the browser.
-
-### 4. Build for Production
-
-```bash
-npm run build
-```
-
-This creates an optimized production build in the `dist` folder.
+- *Components*: Reusable UI elements
+- *Pages*: Full-page components for different views
+- *Services*: External communication (API, blockchain)
+- *Hooks*: Custom React hooks for state management
+- *Utils*: Shared utility functions
 
 ## Project Structure
 
-```
+
 frontend/
+│
 ├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── Wallet/       # Wallet connection components
+│   │
+│   ├── components/               # Reusable UI components
+│   │   ├── Wallet/              # Wallet connection components
 │   │   │   └── ConnectWallet.jsx
-│   │   ├── Products/     # Product-related components
+│   │   ├── Products/            # Product-related components
+│   │   │   ├── ProductCard.jsx
+│   │   │   ├── ProductList.jsx
 │   │   │   └── ProductRegistration.jsx
-│   │   ├── Verification/ # Verification components
-│   │   │   └── QRScanner.jsx
-│   │   └── Common/       # Common components
+│   │   ├── Verification/        # Verification components
+│   │   │   ├── QRScanner.jsx
+│   │   │   ├── QualityCheck.jsx
+│   │   │   └── ComplianceCheck.jsx
+│   │   └── Common/              # Shared components
+│   │       ├── Navigation.jsx
 │   │       └── QRCodeDisplay.jsx
-│   ├── pages/            # Page components
+│   │
+│   ├── pages/                    # Page-level components
+│   │   ├── Home.jsx
 │   │   ├── ProducerDashboard.jsx
 │   │   ├── DistributorDashboard.jsx
 │   │   ├── RetailerDashboard.jsx
 │   │   ├── RegulatorDashboard.jsx
-│   │   └── ConsumerDashboard.jsx
-│   ├── services/         # External service integrations
-│   │   ├── web3.js       # MetaMask connection service
-│   │   ├── contracts.js  # Smart contract interactions
-│   │   └── api.js        # Backend API calls
-│   ├── hooks/            # Custom React hooks
-│   │   ├── useWeb3.js    # Web3 connection hook
-│   │   └── useRole.js    # User role detection hook
-│   ├── utils/            # Utility functions
-│   │   ├── constants.js  # Application constants
-│   │   └── helpers.js    # Helper functions
-│   ├── App.jsx           # Main application component
-│   ├── main.jsx          # Application entry point
-│   └── index.css         # Global styles
-├── index.html            # HTML template
-├── vite.config.js        # Vite configuration
-├── package.json          # Dependencies
-└── README.md             # This file
-```
+│   │   ├── ConsumerDashboard.jsx
+│   │   ├── ProductVerification.jsx
+│   │   └── TransferProduct.jsx
+│   │
+│   ├── services/                 # External service integrations
+│   │   ├── api.js               # Backend API client
+│   │   ├── web3.js              # MetaMask integration
+│   │   └── contracts.js         # Smart contract interactions
+│   │
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useWeb3.js           # Web3 connection state
+│   │   └── useRole.js           # User role management
+│   │
+│   ├── utils/                    # Utility functions
+│   │   ├── constants.js         # Application constants
+│   │   └── helpers.js           # Helper functions
+│   │
+│   ├── App.jsx                   # Main application component
+│   ├── main.jsx                  # Application entry point
+│   └── index.css                 # Global styles and theme
+│
+├── index.html                    # HTML template
+├── vite.config.js                # Vite configuration
+└── package.json                  # Dependencies
 
-## Features
 
-### Role-Based Dashboards
+## Setup
 
-The application provides separate dashboards for each role:
+### Installation
 
-- **Producer Dashboard**: Register products, view registered products, generate QR codes
-- **Distributor Dashboard**: View products in transit, transfer to retailers/consumers
-- **Retailer Dashboard**: Manage inventory, perform quality checks, transfer to consumers
-- **Regulator Dashboard**: View all products, perform compliance checks, audit records
-- **Consumer Dashboard**: Scan QR codes, verify products, view product journey and provenance
+bash
+npm install
 
-### Wallet Integration
 
-- MetaMask wallet connection
-- Automatic network detection and switching
-- Account change handling
-- Transaction signing and status tracking
+### Environment Configuration
 
-### QR Code Features
+Copy the example environment file:
+
+bash
+cp .env.example .env
+
+
+Configure environment variables (Vite requires VITE_ prefix):
+
+env
+VITE_API_URL=http://localhost:3000
+VITE_ACCESS_CONTROL_CONTRACT_ADDRESS=0x...
+VITE_SUPPLY_CHAIN_CONTRACT_ADDRESS=0x...
+VITE_RPC_URL=http://127.0.0.1:8545
+VITE_CHAIN_ID=1337
+
+
+Contract addresses are available in ../deployments/local.json after deployment.
+
+### Development Server
+
+bash
+npm run dev
+
+
+Application runs on http://localhost:5173 with hot module replacement.
+
+### Production Build
+
+bash
+npm run build
+
+
+Generates optimized production build in dist/ directory.
+
+## Application Flow
+
+### Authentication Flow
+
+1. User connects MetaMask wallet
+2. Application detects connected account
+3. Backend API checks account role
+4. Application routes to appropriate dashboard
+5. Role-based features are enabled/disabled
+
+### Product Registration Flow
+
+1. Producer navigates to Producer Dashboard
+2. Fills product registration form
+3. Submits transaction via MetaMask
+4. Transaction confirmed on blockchain
+5. Product appears in product list
+6. QR code generated and displayed
+
+### Product Verification Flow
+
+1. Consumer scans QR code or enters product ID
+2. Application fetches product data from backend
+3. Backend queries blockchain for product information
+4. Verification history and provenance displayed
+5. Authenticity status shown with verification details
+
+## Component Architecture
+
+### Pages
+
+Each role has a dedicated dashboard page:
+
+- *Home*: Landing page with role-based navigation
+- *ProducerDashboard*: Product registration and management
+- *DistributorDashboard*: Product transfers and shipment tracking
+- *RetailerDashboard*: Inventory management and quality checks
+- *RegulatorDashboard*: Compliance auditing and oversight
+- *ConsumerDashboard*: Product verification and provenance viewing
+
+### Components
+
+Reusable components organized by functionality:
+
+- *Wallet Components*: MetaMask connection and wallet status
+- *Product Components*: Product display, listing, and registration
+- *Verification Components*: QR scanning, quality checks, compliance checks
+- *Common Components*: Navigation, QR code display
+
+### Services
+
+- *api.js*: HTTP client for backend API communication
+- *web3.js*: MetaMask wallet connection and transaction signing
+- *contracts.js*: Direct smart contract interactions (if needed)
+
+### Hooks
+
+- *useWeb3*: Manages wallet connection state and account information
+- *useRole*: Fetches and manages user role from backend
+
+## Styling
+
+The application uses a modern, food-safety themed design:
+
+- CSS variables for consistent theming
+- Component-scoped stylesheets
+- Responsive design for mobile and desktop
+- Modern UI with smooth transitions and animations
+
+## Key Features
+
+### Role-Based Access Control
+
+- Automatic role detection on wallet connection
+- Role-specific dashboard routing
+- Feature visibility based on user role
+- Permission-based action buttons
+
+### QR Code Integration
 
 - QR code generation for products
-- QR code scanning for product verification
-- QR code data includes product ID and verification URL
+- Camera-based QR code scanning
+- QR code data parsing and validation
+- Direct navigation to product verification
+
+### Real-Time Updates
+
+- Automatic refresh on account change
+- Transaction status tracking
+- Real-time product status updates
+- Verification history updates
 
 ## Dependencies
 
-- **react**: React library for building user interfaces
-- **react-dom**: React DOM rendering
-- **react-router-dom**: Client-side routing
-- **ethers**: Ethereum JavaScript library for blockchain interaction
-- **axios**: HTTP client for API requests
-- **qrcode.react**: QR code display component
-- **html5-qrcode**: QR code scanning library
-- **vite**: Build tool and development server
+- *react*: UI library (^18.0)
+- *react-dom*: React DOM rendering
+- *react-router-dom*: Client-side routing
+- *ethers*: Ethereum JavaScript library
+- *axios*: HTTP client for API requests
+- *html5-qrcode*: QR code scanning library
+- *vite*: Build tool and development server
 
-## Implementation Status
+## Development
 
-The frontend structure is complete with all components, pages, services, and hooks defined. Each file contains TODO comments with detailed implementation instructions. The implementation involves:
+### Component Development
 
-1. Implementing Web3 service for MetaMask connection
-2. Implementing contract service for smart contract interactions
-3. Implementing API service for backend communication
-4. Creating React hooks for Web3 and role management
-5. Building UI components for each feature
-6. Implementing role-based dashboards
-7. Adding QR code scanning and generation functionality
+1. Create component file in appropriate directory
+2. Add corresponding CSS file
+3. Import and use in parent component
+4. Add to routing if it's a page component
 
-## Development Workflow
+### Adding New Features
 
-1. Start with services: Implement `web3.js`, `contracts.js`, and `api.js`
-2. Implement hooks: Create `useWeb3` and `useRole` hooks
-3. Build components: Start with `ConnectWallet`, then product components
-4. Create pages: Implement dashboards one by one
-5. Add routing: Set up React Router with role-based navigation
-6. Style and polish: Add CSS styling and improve user experience
+1. Define API endpoints in services/api.js
+2. Create UI components
+3. Integrate with existing pages
+4. Add routing if needed
+5. Update navigation if required
 
-## Notes
+### State Management
 
-- All contract interactions require MetaMask wallet connection
-- Users must have appropriate roles assigned to access role-specific features
-- The application connects to local Hardhat network by default (chain ID 1337)
-- Contract addresses must match the deployed contracts from `deployments/local.json`
+- Use React hooks for local state
+- useWeb3 and useRole for global wallet/role state
+- API calls for data fetching
+- Context API for shared state (if needed)
+
+## Common Issues
+
+### MetaMask Not Detected
+- Install MetaMask browser extension
+- Refresh the page
+- Check browser console for errors
+
+### Network Mismatch
+- Ensure Hardhat Local network is added to MetaMask
+- Verify Chain ID is 1337
+- Switch network in MetaMask if needed
+
+### Backend Connection Failed
+- Verify backend server is running
+- Check VITE_API_URL in .env
+- Review browser console for CORS errors
+
+### Role Not Detected
+- Run ./assign-roles.sh to assign roles
+- Refresh page after connecting wallet
+- Verify account address has assigned role
+
+### Transaction Rejected
+- Check MetaMask is unlocked
+- Verify sufficient balance (test ETH)
+- Review transaction details in MetaMask
+- Check browser console for error messages
+
+## Production Deployment
+
+### Build Configuration
+
+1. Update environment variables for production
+2. Build application: npm run build
+3. Deploy dist/ directory to hosting service
+4. Configure environment variables on hosting platform
+
+### Considerations
+
+- Use production API endpoints
+- Configure CORS properly
+- Use HTTPS for secure connections
+- Set up error tracking and monitoring
+- Optimize bundle size
+- Implement code splitting if needed
+
+## Browser Support
+
+- Chrome/Edge (recommended)
+- Firefox
+- Safari
+- MetaMask extension required
+
+## Performance
+
+- Code splitting for route-based chunks
+- Lazy loading for heavy components
+- Optimized asset loading
+- Efficient re-rendering with React hooks
+
+## Security
+
+- Never expose private keys in frontend code
+- Validate all user inputs
+- Sanitize data before display
+- Use HTTPS in production
+- Implement proper CORS policies
+- Validate contract addresses from environment
