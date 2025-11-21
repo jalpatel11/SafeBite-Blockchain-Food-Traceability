@@ -25,13 +25,10 @@ class Web3Service {
    * 
    * @returns {boolean} True if MetaMask is available
    * 
-   * TODO:
-   * 1. Check if window.ethereum exists
-   * 2. Return boolean
+   * Checks if window.ethereum exists, which indicates MetaMask is installed.
    */
   isMetaMaskInstalled() {
-    // TODO: Check window.ethereum
-    return false;
+    return typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
   }
 
   /**
@@ -39,30 +36,69 @@ class Web3Service {
    * 
    * @returns {Promise<string>} Connected account address
    * 
-   * TODO:
-   * 1. Check if MetaMask is installed, throw error if not
-   * 2. Request account access using window.ethereum.request()
-   * 3. Create provider using new ethers.BrowserProvider(window.ethereum)
-   * 4. Get signer from provider
-   * 5. Get account address
-   * 6. Store provider, signer, and account
-   * 7. Set isConnected to true
-   * 8. Return account address
+   * Checks if MetaMask is installed, requests account access,
+   * creates provider and signer, gets account address, stores state,
+   * and returns the account address.
    */
   async connectWallet() {
-    // TODO: Implement MetaMask connection
-    throw new Error('Not implemented');
+    // Check if MetaMask is installed
+    if (!this.isMetaMaskInstalled()) {
+      throw new Error('MetaMask is not installed. Please install MetaMask to continue.');
+    }
+
+    try {
+      // Request account access
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts found. Please unlock MetaMask.');
+      }
+
+      // Create provider using ethers v6 BrowserProvider
+      this.provider = new ethers.BrowserProvider(window.ethereum);
+
+      // Get signer from provider
+      this.signer = await this.provider.getSigner();
+
+      // Get account address
+      this.account = await this.signer.getAddress();
+      this.isConnected = true;
+
+      // Ensure we're on the correct network
+      await this.switchToLocalhost();
+
+      return this.account;
+    } catch (error) {
+      // Reset state on error
+      this.provider = null;
+      this.signer = null;
+      this.account = null;
+      this.isConnected = false;
+
+      // Provide user-friendly error messages
+      if (error.code === 4001) {
+        throw new Error('Please connect to MetaMask.');
+      } else if (error.code === -32002) {
+        throw new Error('Connection request already pending. Please check MetaMask.');
+      } else {
+        throw new Error(error.message || 'Failed to connect to MetaMask');
+      }
+    }
   }
 
   /**
    * Disconnect wallet
    * 
-   * TODO:
-   * 1. Reset provider, signer, account to null
-   * 2. Set isConnected to false
+   * Resets provider, signer, account to null and sets isConnected to false.
+   * Note: MetaMask doesn't have a true disconnect, so we just reset our state.
    */
   disconnectWallet() {
-    // TODO: Reset all connection state
+    this.provider = null;
+    this.signer = null;
+    this.account = null;
+    this.isConnected = false;
   }
 
   /**
@@ -72,6 +108,47 @@ class Web3Service {
    */
   getAccount() {
     return this.account;
+  }
+
+  /**
+   * Check if wallet is connected
+   * 
+   * @returns {boolean} True if connected
+   */
+  getIsConnected() {
+    return this.isConnected && this.account !== null;
+  }
+
+  /**
+   * Check current connection status
+   * Attempts to get accounts without requesting access
+   * 
+   * @returns {Promise<boolean>} True if already connected
+   */
+  async checkConnection() {
+    if (!this.isMetaMaskInstalled()) {
+      return false;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({
+        method: 'eth_accounts'
+      });
+
+      if (accounts && accounts.length > 0) {
+        // Already connected
+        this.provider = new ethers.BrowserProvider(window.ethereum);
+        this.signer = await this.provider.getSigner();
+        this.account = accounts[0];
+        this.isConnected = true;
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking connection:', error);
+      return false;
+    }
   }
 
   /**
@@ -97,14 +174,60 @@ class Web3Service {
    * 
    * @returns {Promise<void>}
    * 
-   * TODO:
-   * 1. Check if already on localhost (chainId 1337)
-   * 2. If not, request network switch using window.ethereum.request()
-   * 3. Add network if it doesn't exist
-   * 4. Handle errors
+   * Checks if already on localhost (chainId 1337), and if not,
+   * requests network switch or adds the network if it doesn't exist.
    */
   async switchToLocalhost() {
-    // TODO: Implement network switching
+    if (!this.isMetaMaskInstalled()) {
+      return;
+    }
+
+    const targetChainId = '0x539'; // 1337 in hex
+    const targetChainIdDecimal = 1337;
+
+    try {
+      // Get current chain ID
+      const currentChainId = await window.ethereum.request({
+        method: 'eth_chainId'
+      });
+
+      // If already on correct network, return
+      if (currentChainId === targetChainId || parseInt(currentChainId, 16) === targetChainIdDecimal) {
+        return;
+      }
+
+      // Try to switch network
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: targetChainId }]
+        });
+      } catch (switchError) {
+        // If network doesn't exist, add it
+        if (switchError.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: targetChainId,
+              chainName: 'Hardhat Local',
+              nativeCurrency: {
+                name: 'Ether',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['http://127.0.0.1:8545'],
+              blockExplorerUrls: null
+            }]
+          });
+        } else {
+          throw switchError;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+      // Don't throw - allow connection to continue even if network switch fails
+      // User can manually switch network
+    }
   }
 
   /**
@@ -112,13 +235,43 @@ class Web3Service {
    * 
    * @param {Function} callback - Callback function when account changes
    * 
-   * TODO:
-   * 1. Listen to window.ethereum.on('accountsChanged')
-   * 2. Call callback with new accounts
-   * 3. Update internal state
+   * Listens to window.ethereum.on('accountsChanged'), calls callback with new accounts,
+   * and updates internal state. Returns cleanup function to remove listener.
+   * 
+   * @returns {Function} Cleanup function to remove listener
    */
   onAccountsChanged(callback) {
-    // TODO: Implement account change listener
+    if (!this.isMetaMaskInstalled()) {
+      return () => {};
+    }
+
+    const handleAccountsChanged = (accounts) => {
+      if (accounts.length === 0) {
+        // User disconnected
+        this.disconnectWallet();
+        callback(null);
+      } else {
+        // Account changed
+        this.account = accounts[0];
+        if (this.provider) {
+          this.provider.getSigner().then(signer => {
+            this.signer = signer;
+            callback(accounts[0]);
+          });
+        } else {
+          callback(accounts[0]);
+        }
+      }
+    };
+
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+
+    // Return cleanup function
+    return () => {
+      if (window.ethereum && window.ethereum.removeListener) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      }
+    };
   }
 
   /**
@@ -126,13 +279,31 @@ class Web3Service {
    * 
    * @param {Function} callback - Callback function when network changes
    * 
-   * TODO:
-   * 1. Listen to window.ethereum.on('chainChanged')
-   * 2. Call callback with new chainId
-   * 3. Reload page or update state
+   * Listens to window.ethereum.on('chainChanged'), calls callback with new chainId.
+   * Returns cleanup function to remove listener.
+   * 
+   * @returns {Function} Cleanup function to remove listener
    */
   onChainChanged(callback) {
-    // TODO: Implement chain change listener
+    if (!this.isMetaMaskInstalled()) {
+      return () => {};
+    }
+
+    const handleChainChanged = (chainId) => {
+      // Reload page on network change (MetaMask recommendation)
+      // Or update state if preferred
+      callback(chainId);
+      // Optionally reload page: window.location.reload();
+    };
+
+    window.ethereum.on('chainChanged', handleChainChanged);
+
+    // Return cleanup function
+    return () => {
+      if (window.ethereum && window.ethereum.removeListener) {
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      }
+    };
   }
 }
 
