@@ -11,6 +11,7 @@
 
 import { ethers } from 'ethers';
 import web3Service from './web3';
+import { roleAPI } from './api';
 
 class ContractService {
   constructor() {
@@ -41,12 +42,20 @@ class ContractService {
    * @param {string} address - User address
    * @returns {Promise<number>} Role enum value
    * 
-   * TODO:
-   * 1. Call accessControlContract.getRole(address)
-   * 2. Return role number
+   * Calls backend API to get user role (simpler than direct contract call).
+   * Returns role number (0-4).
    */
   async getUserRole(address) {
-    // TODO: Call contract function
+    try {
+      const response = await roleAPI.check(address);
+      if (response.data && response.data.success) {
+        return response.data.role;
+      }
+      return 4; // Default to CONSUMER
+    } catch (error) {
+      console.error('Failed to get user role:', error);
+      return 4; // Default to CONSUMER on error
+    }
   }
 
   /**
