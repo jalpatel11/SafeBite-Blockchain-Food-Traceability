@@ -6,12 +6,12 @@ SafeBite is an enterprise-grade blockchain solution for food supply chain tracea
 
 ## Key Features
 
-- *Role-Based Access Control*: Five distinct roles (Producer, Distributor, Retailer, Regulator, Consumer) with granular permissions
-- *Product Lifecycle Management*: Complete tracking from registration through delivery
-- *Immutable Provenance Records*: All product events permanently stored on blockchain
-- *Quality & Compliance Verification*: Automated certificate generation and authenticity verification
-- *QR Code Integration*: Product identification and consumer verification via QR scanning
-- *Real-Time Status Tracking*: Product status updates throughout the supply chain
+- **Role-Based Access Control**: Five distinct roles (Producer, Distributor, Retailer, Regulator, Consumer) with granular permissions
+- **Product Lifecycle Management**: Complete tracking from registration through delivery
+- **Immutable Provenance Records**: All product events permanently stored on blockchain
+- **Quality & Compliance Verification**: Automated certificate generation and authenticity verification
+- **QR Code Integration**: Product identification and consumer verification via QR scanning
+- **Real-Time Status Tracking**: Product status updates throughout the supply chain
 
 ## System Architecture
 
@@ -19,8 +19,8 @@ The system is built on a four-tier architecture:
 
 ### 1. Smart Contracts Layer
 Solidity smart contracts deployed on Ethereum-compatible blockchain:
-- *SafeBiteAccessRoles.sol*: Role-based access control and permission management
-- *SafeBiteSupplyChain.sol*: Core business logic for product lifecycle, transfers, and verification
+- **SafeBiteAccessRoles.sol**: Role-based access control and permission management
+- **SafeBiteSupplyChain.sol**: Core business logic for product lifecycle, transfers, and verification
 
 ### 2. Backend API Layer
 Express.js REST API server providing:
@@ -73,36 +73,36 @@ SafeBite-Blockchain-Food-Traceability/
 ## Role Definitions
 
 ### PRODUCER
-- *Responsibilities*: Product registration, initial metadata creation, QR code generation
-- *Permissions*: Register products, view registered products, transfer to distributors
-- *Use Cases*: Food manufacturers, farms, processing facilities
+- **Responsibilities**: Product registration, initial metadata creation, QR code generation
+- **Permissions**: Register products, view registered products, transfer to distributors
+- **Use Cases**: Food manufacturers, farms, processing facilities
 
 ### DISTRIBUTOR
-- *Responsibilities*: Product transportation, status updates, ownership transfers
-- *Permissions*: Receive products, update shipment status, transfer to retailers/consumers
-- *Use Cases*: Logistics companies, wholesale distributors
+- **Responsibilities**: Product transportation, status updates, ownership transfers
+- **Permissions**: Receive products, update shipment status, transfer to retailers/consumers
+- **Use Cases**: Logistics companies, wholesale distributors
 
 ### RETAILER
-- *Responsibilities*: Inventory management, quality assessments, consumer sales
-- *Permissions*: Receive products, perform quality checks, transfer to consumers
-- *Use Cases*: Grocery stores, retail chains, markets
+- **Responsibilities**: Inventory management, quality assessments, consumer sales
+- **Permissions**: Receive products, perform quality checks, transfer to consumers
+- **Use Cases**: Grocery stores, retail chains, markets
 
 ### REGULATOR
-- *Responsibilities*: Compliance auditing, quality verification, system oversight
-- *Permissions*: View all products, perform compliance checks, perform quality checks
-- *Use Cases*: Government agencies, food safety inspectors, certification bodies
+- **Responsibilities**: Compliance auditing, quality verification, system oversight
+- **Permissions**: View all products, perform compliance checks, perform quality checks
+- **Use Cases**: Government agencies, food safety inspectors, certification bodies
 
 ### CONSUMER
-- *Responsibilities*: Product verification, provenance review
-- *Permissions*: Verify authenticity, view complete product history, scan QR codes
-- *Use Cases*: End consumers, verification services
+- **Responsibilities**: Product verification, provenance review
+- **Permissions**: Verify authenticity, view complete product history, scan QR codes
+- **Use Cases**: End consumers, verification services
 
 ## Prerequisites
 
-- *Node.js* v16 or higher
-- *npm* v7 or higher (or yarn)
-- *MetaMask* browser extension (for frontend interaction)
-- *Git* (for version control)
+- **Node.js** v16 or higher
+- **npm** v7 or higher (or yarn)
+- **MetaMask** browser extension (for frontend interaction)
+- **Git** (for version control)
 
 ## Installation & Setup
 
@@ -207,32 +207,32 @@ This assigns roles to the default Hardhat test accounts.
 1. Install MetaMask browser extension
 2. Add custom network:
    - Network Name: Hardhat Local
-   - RPC URL: http://127.0.0.1:8545
-   - Chain ID: 1337
+   - RPC URL: `http://127.0.0.1:8545`
+   - Chain ID: `1337`
    - Currency Symbol: ETH
-3. Import test accounts from ACCOUNTS_REFERENCE.md
+3. Import test accounts from `ACCOUNTS_REFERENCE.md`
 4. Connect wallet to the application
 
 ## Technology Stack
 
 ### Smart Contracts
-- *Solidity* ^0.8.0
-- *Hardhat* - Development environment
-- *Ethers.js* - Blockchain interaction
+- **Solidity** ^0.8.0
+- **Hardhat** - Development environment
+- **Ethers.js** - Blockchain interaction
 
 ### Backend
-- *Express.js* - Web framework
-- *Ethers.js* - Smart contract interaction
-- *QRCode* - QR code generation
-- *CORS* - Cross-origin resource sharing
+- **Express.js** - Web framework
+- **Ethers.js** - Smart contract interaction
+- **QRCode** - QR code generation
+- **CORS** - Cross-origin resource sharing
 
 ### Frontend
-- *React* ^18.0 - UI framework
-- *React Router* - Client-side routing
-- *Vite* - Build tool and dev server
-- *Ethers.js* - Blockchain interaction
-- *Axios* - HTTP client
-- *html5-qrcode* - QR code scanning
+- **React** ^18.0 - UI framework
+- **React Router** - Client-side routing
+- **Vite** - Build tool and dev server
+- **Ethers.js** - Blockchain interaction
+- **Axios** - HTTP client
+- **html5-qrcode** - QR code scanning
 
 ## Core Functionality
 
@@ -243,9 +243,9 @@ Producers register products with metadata including name, batch ID, origin, and 
 Products can be transferred between stakeholders with automatic status updates and transfer history recording.
 
 ### Verification System
-- *Quality Checks*: Retailers and regulators perform quality assessments
-- *Compliance Checks*: Regulators verify regulatory compliance
-- *Authenticity Verification*: Automatic verification when quality and compliance checks pass
+- **Quality Checks**: Retailers and regulators perform quality assessments
+- **Compliance Checks**: Regulators verify regulatory compliance
+- **Authenticity Verification**: Automatic verification when quality and compliance checks pass
 
 ### Provenance Tracking
 Complete immutable history of:
@@ -256,7 +256,7 @@ Complete immutable history of:
 
 ## API Documentation
 
-See backend/README.md for complete API endpoint documentation.
+See `backend/README.md` for complete API endpoint documentation.
 
 ## Development
 
@@ -281,22 +281,22 @@ npm run build
 
 ### Environment Variables
 
-See .env.example files in backend/ and frontend/ directories for required configuration.
+See `.env.example` files in `backend/` and `frontend/` directories for required configuration.
 
 ## Troubleshooting
 
 ### Backend Connection Issues
-- Verify Hardhat node is running: npm run node
-- Check RPC_URL in backend .env
-- Ensure contracts are deployed: npm run deploy:local
+- Verify Hardhat node is running: `npm run node`
+- Check RPC_URL in backend `.env`
+- Ensure contracts are deployed: `npm run deploy:local`
 
 ### Frontend Connection Issues
 - Verify backend is running on port 3000
-- Check VITE_API_URL in frontend .env
+- Check `VITE_API_URL` in frontend `.env`
 - Ensure MetaMask is connected to Hardhat Local network
 
 ### Role Assignment Issues
-- Run ./assign-roles.sh after deploying contracts
+- Run `./assign-roles.sh` after deploying contracts
 - Verify backend is running before assigning roles
 - Check contract addresses match deployment
 
@@ -308,7 +308,7 @@ See .env.example files in backend/ and frontend/ directories for required config
 ## Security Considerations
 
 - Private keys should never be committed to version control
-- Development endpoints (/api/roles/grant-dev) are for local testing only
+- Development endpoints (`/api/roles/grant-dev`) are for local testing only
 - Production deployments require proper authentication and authorization
 - Smart contracts should be audited before mainnet deployment
 
@@ -318,10 +318,10 @@ Apache License 2.0
 
 ## Documentation
 
-- backend/README.md - Backend API documentation
-- frontend/README.md - Frontend application documentation
-- ACCOUNTS_REFERENCE.md - Test account credentials
-- DEPLOYMENT_LOCAL.md - Local deployment guide
+- `backend/README.md` - Backend API documentation
+- `frontend/README.md` - Frontend application documentation
+- `ACCOUNTS_REFERENCE.md` - Test account credentials
+- `DEPLOYMENT_LOCAL.md` - Local deployment guide
 
 ## Contributing
 
