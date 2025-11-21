@@ -6,7 +6,7 @@
 const contractService = require('../services/contractService');
 const qrService = require('../services/qrService');
 const { formatError, parseContractError } = require('../utils/errors');
-const { isValidProductId } = require('../utils/helpers');
+const { isValidProductId, isValidAddress } = require('../utils/helpers');
 
 /**
  * Register a new product
@@ -14,26 +14,40 @@ const { isValidProductId } = require('../utils/helpers');
  * 
  * Body: { signerAddress, name, batchId, origin, metadataHash }
  * 
- * TODO:
- * 1. Validate input (name, batchId, origin required)
- * 2. Call contractService.registerProduct()
- * 3. Generate QR code for the product
- * 4. Return product ID, transaction hash, and QR code
+ * Validates input (name, batchId, origin required), calls contractService.registerProduct(),
+ * generates QR code for the product, and returns product ID, transaction hash, and QR code.
  */
 async function registerProduct(req, res) {
   try {
     const { signerAddress, name, batchId, origin, metadataHash = '' } = req.body;
     
-    // TODO: Validate inputs
-    // TODO: Call contractService.registerProduct()
-    // TODO: Generate QR code
-    // TODO: Return response
+    // Validate inputs
+    if (!signerAddress || !isValidAddress(signerAddress)) {
+      return res.status(400).json(formatError(new Error('Invalid signer address'), 'registerProduct'));
+    }
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json(formatError(new Error('Product name is required'), 'registerProduct'));
+    }
+    if (!batchId || batchId.trim().length === 0) {
+      return res.status(400).json(formatError(new Error('Batch ID is required'), 'registerProduct'));
+    }
+    if (!origin || origin.trim().length === 0) {
+      return res.status(400).json(formatError(new Error('Origin is required'), 'registerProduct'));
+    }
     
+    // Call contractService.registerProduct()
+    const result = await contractService.registerProduct(signerAddress, name, batchId, origin, metadataHash);
+    
+    // Generate QR code
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const qrCode = await qrService.generateQRCode(result.productId, baseUrl);
+    
+    // Return response
     res.json({
       success: true,
-      productId: null, // TODO: Get from transaction
-      transactionHash: null, // TODO: Get from transaction
-      qrCode: null // TODO: Get from qrService
+      productId: result.productId,
+      transactionHash: result.transactionHash,
+      qrCode: qrCode
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'registerProduct'));
@@ -44,24 +58,25 @@ async function registerProduct(req, res) {
  * Get product information
  * GET /api/products/:id
  * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getProduct()
- * 3. Get additional info (owner, status, authentic)
- * 4. Return formatted product data
+ * Validates product ID, calls contractService.getProduct() which already includes
+ * owner, status, and authentic status, and returns formatted product data.
  */
 async function getProduct(req, res) {
   try {
     const productId = parseInt(req.params.id);
     
-    // TODO: Validate productId
-    // TODO: Call contractService.getProduct()
-    // TODO: Get owner, status, authentic status
-    // TODO: Return formatted product
+    // Validate productId
+    if (!isValidProductId(productId)) {
+      return res.status(400).json(formatError(new Error('Invalid product ID'), 'getProduct'));
+    }
     
+    // Call contractService.getProduct() (already includes owner, status, authentic)
+    const product = await contractService.getProduct(productId);
+    
+    // Return formatted product
     res.json({
       success: true,
-      product: null // TODO: Format product data
+      product: product
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'getProduct'));
@@ -72,22 +87,24 @@ async function getProduct(req, res) {
  * Get product journey
  * GET /api/products/:id/journey
  * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getProductJourney()
- * 3. Return journey array
+ * Validates product ID, calls contractService.getProductJourney(), and returns journey array.
  */
 async function getProductJourney(req, res) {
   try {
     const productId = parseInt(req.params.id);
     
-    // TODO: Validate productId
-    // TODO: Call contractService.getProductJourney()
-    // TODO: Return journey
+    // Validate productId
+    if (!isValidProductId(productId)) {
+      return res.status(400).json(formatError(new Error('Invalid product ID'), 'getProductJourney'));
+    }
     
+    // Call contractService.getProductJourney()
+    const journey = await contractService.getProductJourney(productId);
+    
+    // Return journey
     res.json({
       success: true,
-      journey: [] // TODO: Get from contract
+      journey: journey
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'getProductJourney'));
@@ -98,24 +115,28 @@ async function getProductJourney(req, res) {
  * Get complete product provenance
  * GET /api/products/:id/provenance
  * 
- * TODO:
- * 1. Validate product ID
- * 2. Call contractService.getCompleteProvenance()
- * 3. Parse JSON string
- * 4. Return provenance object
+ * Validates product ID, calls contractService.getCompleteProvenance(),
+ * parses JSON string, and returns provenance object.
  */
 async function getProductProvenance(req, res) {
   try {
     const productId = parseInt(req.params.id);
     
-    // TODO: Validate productId
-    // TODO: Call contractService.getCompleteProvenance()
-    // TODO: Parse JSON string
-    // TODO: Return provenance
+    // Validate productId
+    if (!isValidProductId(productId)) {
+      return res.status(400).json(formatError(new Error('Invalid product ID'), 'getProductProvenance'));
+    }
     
+    // Call contractService.getCompleteProvenance()
+    const provenanceString = await contractService.getCompleteProvenance(productId);
+    
+    // Parse JSON string
+    const provenance = JSON.parse(provenanceString);
+    
+    // Return provenance
     res.json({
       success: true,
-      provenance: {} // TODO: Parse from contract
+      provenance: provenance
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'getProductProvenance'));
@@ -123,27 +144,70 @@ async function getProductProvenance(req, res) {
 }
 
 /**
- * List products (filtered by role/ownership)
- * GET /api/products?owner=address&role=number
+ * List products (filtered by role/ownership/producer)
+ * GET /api/products?owner=address&producer=address
  * 
- * TODO:
- * 1. Get optional query params (owner, role)
- * 2. Get product count
- * 3. Fetch products (if owner specified, filter by owner)
- * 4. Return product list
+ * Gets optional query params (owner, producer), gets product count,
+ * fetches products and filters by owner or producer, and returns product list.
+ * 
+ * - If `producer` is specified: returns all products registered by that producer (regardless of current ownership)
+ * - If `owner` is specified: returns all products currently owned by that address
+ * - If neither is specified: returns all products
  */
 async function listProducts(req, res) {
   try {
-    const { owner, role } = req.query;
+    const { owner, producer } = req.query;
     
-    // TODO: Get product count
-    // TODO: If owner specified, fetch products owned by that address
-    // TODO: Return list of products
+    // Get product count
+    const count = await contractService.getProductCount();
     
+    const products = [];
+    
+    // If producer specified, filter by producer (who registered the product)
+    if (producer && isValidAddress(producer)) {
+      for (let i = 1; i <= count; i++) {
+        try {
+          const product = await contractService.getProduct(i);
+          if (product.producer && product.producer.toLowerCase() === producer.toLowerCase()) {
+            products.push(product);
+          }
+        } catch (error) {
+          // Product might not exist, skip it
+          continue;
+        }
+      }
+    }
+    // If owner specified, filter by current owner
+    else if (owner && isValidAddress(owner)) {
+      for (let i = 1; i <= count; i++) {
+        try {
+          const product = await contractService.getProduct(i);
+          if (product.currentOwner && product.currentOwner.toLowerCase() === owner.toLowerCase()) {
+            products.push(product);
+          }
+        } catch (error) {
+          // Product might not exist, skip it
+          continue;
+        }
+      }
+    } else {
+      // Fetch all products
+      for (let i = 1; i <= count; i++) {
+        try {
+          const product = await contractService.getProduct(i);
+          products.push(product);
+        } catch (error) {
+          // Product might not exist, skip it
+          continue;
+        }
+      }
+    }
+    
+    // Return list of products
     res.json({
       success: true,
-      products: [], // TODO: Fetch products
-      count: 0 // TODO: Get count
+      products: products,
+      count: products.length
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'listProducts'));
