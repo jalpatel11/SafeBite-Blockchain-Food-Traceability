@@ -149,35 +149,71 @@ export default function QRScanner({ onScan }) {
    */
   const handleScanSuccess = (decodedText) => {
     try {
-      // Try to parse as JSON first (in case QR contains structured data)
-      let productId = decodedText;
+      console.log('QR Code scanned:', decodedText);
+      let productId = null;
       
-      try {
-        const parsed = JSON.parse(decodedText);
-        // If QR code contains JSON with productId field
-        if (parsed.productId) {
-          productId = parsed.productId;
-        } else if (parsed.id) {
-          productId = parsed.id;
+      // First, check if it's a URL and extract productId from URL
+      if (decodedText.includes('/verify/')) {
+        const match = decodedText.match(/\/verify\/(\d+)/);
+        if (match && match[1]) {
+          productId = match[1];
+          console.log('Extracted productId from URL:', productId);
         }
-      } catch {
-        // Not JSON, use as-is
+      }
+      
+      // If not found in URL, try to parse as JSON
+      if (!productId) {
+        try {
+          const parsed = JSON.parse(decodedText);
+          // If QR code contains JSON with productId field
+          if (parsed.productId !== undefined && parsed.productId !== null) {
+            productId = parsed.productId;
+            console.log('Extracted productId from JSON:', productId);
+          } else if (parsed.id !== undefined && parsed.id !== null) {
+            productId = parsed.id;
+            console.log('Extracted productId from JSON (id field):', productId);
+          }
+        } catch (parseError) {
+          // Not JSON, check if it's a plain number
+          const numMatch = decodedText.match(/^(\d+)$/);
+          if (numMatch && numMatch[1]) {
+            productId = numMatch[1];
+            console.log('Extracted productId as plain number:', productId);
+          } else {
+            // Use as-is if it looks like a valid product ID
+            const trimmed = decodedText.trim();
+            if (/^\d+$/.test(trimmed)) {
+              productId = trimmed;
+              console.log('Using decoded text as productId:', productId);
+            }
+          }
+        }
       }
 
-      // Extract product ID from URL if QR contains URL
-      if (productId.includes('/verify/')) {
-        const match = productId.match(/\/verify\/(\d+)/);
-        if (match) {
-          productId = match[1];
-        }
+      // Validate productId
+      if (!productId) {
+        console.error('Could not extract productId from QR code:', decodedText);
+        setError('Invalid QR code format. Could not extract product ID.');
+        return;
+      }
+
+      // Convert to string and validate it's a number
+      const productIdStr = productId.toString().trim();
+      const productIdNum = parseInt(productIdStr, 10);
+      
+      if (isNaN(productIdNum) || productIdNum < 0) {
+        console.error('Invalid productId extracted:', productIdStr);
+        setError(`Invalid product ID: ${productIdStr}`);
+        return;
       }
 
       // Stop scanning after successful scan
       stopScanning();
 
       // Call onScan callback with product ID
-      if (onScan && productId) {
-        onScan(productId.toString());
+      if (onScan) {
+        console.log('Calling onScan with productId:', productIdNum.toString());
+        onScan(productIdNum.toString());
       }
     } catch (err) {
       console.error('Error processing scanned QR code:', err);

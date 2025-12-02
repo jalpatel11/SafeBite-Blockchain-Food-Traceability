@@ -2,10 +2,8 @@
  * QR Code Service
  * Generates QR codes for products containing product ID and verification URL
  * 
- * TODO: Implement QR code generation
- * - Generate QR code with product ID
- * - Include verification URL in QR data
- * - Return QR code as image buffer or data URL
+ * This service handles QR code generation for products, allowing consumers
+ * to scan codes and verify product authenticity through the frontend.
  */
 
 const QRCode = require('qrcode');

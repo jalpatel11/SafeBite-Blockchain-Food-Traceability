@@ -50,7 +50,14 @@ export default function QualityCheck({ productId, signerAddress, onQualityCheckC
 
       if (response.data && response.data.success) {
         const passed = qualityScore >= 50;
-        setSuccess(`Quality check ${passed ? 'passed' : 'failed'}! Score: ${qualityScore}/100`);
+        let successMessage = `Quality check ${passed ? 'passed' : 'failed'}! Score: ${qualityScore}/100`;
+        
+        // Check if authenticity was auto-verified
+        if (response.data.autoVerified && response.data.isAuthentic) {
+          successMessage += ' ✓ Product authenticity automatically verified!';
+        }
+        
+        setSuccess(successMessage);
         
         // Reset form
         setQualityScore(75);

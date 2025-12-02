@@ -267,9 +267,9 @@ export default function TransferProduct() {
               <p><strong>Current Owner:</strong> {formatAddress(product.currentOwner)}</p>
               <p><strong>Your Address:</strong> {formatAddress(account)}</p>
               {product.currentOwner?.toLowerCase() === account?.toLowerCase() ? (
-                <p style={{ color: 'green' }}>✓ You are the current owner</p>
+                <p style={{ color: 'green' }}>You are the current owner</p>
               ) : (
-                <p style={{ color: 'red' }}>✗ You are not the current owner</p>
+                <p style={{ color: 'red' }}>You are not the current owner</p>
               )}
             </div>
           )}

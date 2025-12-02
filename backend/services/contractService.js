@@ -2,15 +2,13 @@
  * Contract Service
  * Handles all interactions with SafeBite smart contracts using Ethers.js
  * 
- * TODO: Implement all contract interaction methods
- * - Load contract ABIs from artifacts
- * - Initialize provider and contract instances
- * - Implement all contract function calls
- * - Handle transaction receipts and errors
+ * This service abstracts the complexity of interacting with blockchain contracts,
+ * providing a clean API for the rest of the backend to use. It handles contract
+ * initialization, transaction signing, event querying, and error handling.
  */
 
 const { ethers } = require('ethers');
-const { loadContractAddresses, loadContractABI, generateCertificateHash, mergeCertificateMetadata } = require('../utils/helpers');
+const { loadContractAddresses, loadContractABI, generateCertificateHash, mergeCertificateMetadata, formatDate } = require('../utils/helpers');
 
 class ContractService {
   constructor() {
@@ -231,42 +229,71 @@ class ContractService {
    * @param {number} productId - Product ID
    * @returns {Promise<Array>} Array of journey events as strings with formatted timestamps
    * 
-   * Calls supplyChain.getProductJourney(productId), extracts timestamps from journey strings,
-   * formats them as readable dates, and returns formatted journey array.
+   * Queries ProductRegistered, OwnershipTransferred, and StatusUpdated events
+   * to build complete product journey timeline.
    */
   async getProductJourney(productId) {
-    if (!this.supplyChainContract) {
+    if (!this.supplyChainContract || !this.provider) {
       throw new Error('Contract service not initialized');
     }
     
     try {
-      const journey = await this.supplyChainContract.getProductJourney(productId);
+      const journey = [];
       
-      // Format timestamps in journey strings
-      // Journey strings come as: "Product registered: ... at 1763688372" or "Transferred from ... to ... at 1763688372"
-      const formattedJourney = journey.map(event => {
-        // Extract timestamp (number at the end after "at ")
-        const timestampMatch = event.match(/at (\d+)$/);
-        if (timestampMatch) {
-          const timestamp = parseInt(timestampMatch[1], 10);
-          // Format timestamp to readable date
-          const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
-          const formattedDate = date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-          });
-          // Replace timestamp with formatted date
-          return event.replace(/at \d+$/, `at ${formattedDate}`);
-        }
-        return event;
+      // Get product info for registration event
+      const product = await this.getProduct(productId);
+      
+      // Add product registration event
+      journey.push({
+        event: 'Product registered',
+        description: `Product registered: ${product.name} (Batch: ${product.batchId}) by producer`,
+        timestamp: product.createdAt,
+        formattedDate: formatDate(product.createdAt)
       });
       
-      return formattedJourney;
+      // Query OwnershipTransferred events
+      const transferFilter = this.supplyChainContract.filters.OwnershipTransferred(productId);
+      const transferEvents = await this.supplyChainContract.queryFilter(transferFilter);
+      
+      // Query StatusUpdated events
+      const statusFilter = this.supplyChainContract.filters.StatusUpdated(productId);
+      const statusEvents = await this.supplyChainContract.queryFilter(statusFilter);
+      
+      // Process transfer events
+      for (const event of transferEvents) {
+        const block = await this.provider.getBlock(event.blockNumber);
+        journey.push({
+          event: 'Ownership transferred',
+          description: `Transferred from ${event.args.from} to ${event.args.to}`,
+          timestamp: Number(block.timestamp),
+          formattedDate: formatDate(Number(block.timestamp)),
+          shipmentDetails: event.args.shipmentDetails || ''
+        });
+      }
+      
+      // Process status update events
+      for (const event of statusEvents) {
+        const block = await this.provider.getBlock(event.blockNumber);
+        const statusNames = ['CREATED', 'SHIPPED', 'RECEIVED', 'STORED', 'DELIVERED'];
+        const oldStatus = statusNames[Number(event.args.oldStatus)];
+        const newStatus = statusNames[Number(event.args.newStatus)];
+        
+        journey.push({
+          event: 'Status updated',
+          description: `Status changed from ${oldStatus} to ${newStatus}`,
+          timestamp: Number(block.timestamp),
+          formattedDate: formatDate(Number(block.timestamp)),
+          updatedBy: event.args.updatedBy
+        });
+      }
+      
+      // Sort by timestamp (chronological order)
+      journey.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Format as strings for backward compatibility
+      return journey.map(item => 
+        `${item.description} at ${item.formattedDate}`
+      );
     } catch (error) {
       throw new Error(`Failed to get product journey: ${error.message}`);
     }
@@ -382,24 +409,33 @@ class ContractService {
    * @param {number} productId - Product ID
    * @returns {Promise<Array>} Array of transfer records
    * 
-   * Calls supplyChain.getTransferHistory(productId) and returns formatted
-   * transfer records with from, to, timestamp, and shipmentDetails.
+   * Queries OwnershipTransferred events from the blockchain to build transfer history.
    */
   async getTransferHistory(productId) {
-    if (!this.supplyChainContract) {
+    if (!this.supplyChainContract || !this.provider) {
       throw new Error('Contract service not initialized');
     }
     
     try {
-      const transfers = await this.supplyChainContract.getTransferHistory(productId);
+      // Query OwnershipTransferred events for this product
+      const filter = this.supplyChainContract.filters.OwnershipTransferred(productId);
+      const events = await this.supplyChainContract.queryFilter(filter);
       
-      // Format transfer records
-      return transfers.map(transfer => ({
-        from: transfer.from,
-        to: transfer.to,
-        timestamp: Number(transfer.timestamp),
-        shipmentDetails: transfer.shipmentDetails
+      // Get block timestamps for each event
+      const transfers = await Promise.all(events.map(async (event) => {
+        const block = await this.provider.getBlock(event.blockNumber);
+        return {
+          from: event.args.from,
+          to: event.args.to,
+          timestamp: Number(block.timestamp),
+          shipmentDetails: event.args.shipmentDetails || ''
+        };
       }));
+      
+      // Sort by timestamp (chronological order)
+      transfers.sort((a, b) => a.timestamp - b.timestamp);
+      
+      return transfers;
     } catch (error) {
       throw new Error(`Failed to get transfer history: ${error.message}`);
     }
@@ -545,11 +581,34 @@ class ContractService {
       // Wait for transaction to be mined
       const receipt = await tx.wait();
       
+      // Check if authenticity was auto-verified after quality check (if done by regulator)
+      let isAuthentic = false;
+      let autoVerified = false;
+      if (passed) {
+        try {
+          // Check if signer is a regulator
+          const isRegulator = await this.hasRole(signerAddress, 3); // REGULATOR = 3
+          if (isRegulator) {
+            // Check if authenticity was auto-verified (both quality and compliance checks passed)
+            isAuthentic = await this.isProductAuthentic(productId);
+            // Check if compliance check has also passed
+            const product = await this.getProduct(productId);
+            // If product is authentic and we just did quality check, it means both are done
+            autoVerified = isAuthentic;
+          }
+        } catch (err) {
+          // If check fails, continue without authenticity status
+          console.warn('Could not check authenticity status after quality check:', err.message);
+        }
+      }
+      
       return {
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString(),
-        qualityCertificateHash
+        qualityCertificateHash,
+        isAuthentic: isAuthentic,
+        autoVerified: autoVerified
       };
     } catch (error) {
       throw new Error(`Failed to perform quality check: ${error.message}`);
@@ -645,35 +704,104 @@ class ContractService {
    * @param {number} productId - Product ID
    * @returns {Promise<Array>} Array of verification records
    * 
-   * Calls supplyChain.getVerificationHistory(productId) and returns formatted
-   * verification records with verifier, timestamp, type, result, and notes.
+   * Queries ProductVerified, AuthenticityConfirmed, and ComplianceChecked events
+   * from the blockchain to build verification history.
    */
   async getVerificationHistory(productId) {
-    if (!this.supplyChainContract) {
+    if (!this.supplyChainContract || !this.provider) {
       throw new Error('Contract service not initialized');
     }
     
     try {
-      const verifications = await this.supplyChainContract.getVerificationHistory(productId);
+      const verifications = [];
       
-      // Format verification records
-      return verifications.map(verification => {
-        // Ensure vType is a valid number
-        let vType = Number(verification.vType);
-        if (isNaN(vType)) {
-          // If vType is invalid, default to 0 (QUALITY_CHECK)
-          vType = 0;
+      // Query ProductVerified events for this product
+      const productVerifiedFilter = this.supplyChainContract.filters.ProductVerified(productId);
+      const productVerifiedEvents = await this.supplyChainContract.queryFilter(productVerifiedFilter);
+      
+      // Query AuthenticityConfirmed events for this product
+      const authenticityFilter = this.supplyChainContract.filters.AuthenticityConfirmed(productId);
+      const authenticityEvents = await this.supplyChainContract.queryFilter(authenticityFilter);
+      
+      // Query ComplianceChecked events for this product
+      const complianceFilter = this.supplyChainContract.filters.ComplianceChecked(productId);
+      const complianceEvents = await this.supplyChainContract.queryFilter(complianceFilter);
+      
+      // Process ProductVerified events (includes quality checks, compliance checks, authenticity)
+      for (const event of productVerifiedEvents) {
+        const block = await this.provider.getBlock(event.blockNumber);
+        const vType = Number(event.args.vType);
+        const result = event.args.result;
+        const verifier = event.args.verifier;
+        
+        // Try to get notes from transaction logs if available
+        let notes = '';
+        try {
+          const txReceipt = await this.provider.getTransactionReceipt(event.transactionHash);
+          // Notes might be in additional logs, but for now we'll use empty string
+          // In a real implementation, you might emit notes in a separate event
+        } catch (e) {
+          // Ignore errors getting notes
         }
         
-        return {
-          verifier: verification.verifier,
-          timestamp: Number(verification.timestamp),
-          vType: vType, // 0=QUALITY_CHECK, 1=REGULATORY_APPROVAL, 2=AUTHENTICITY, 3=COMPLIANCE
+        verifications.push({
+          verifier: verifier,
+          timestamp: Number(block.timestamp),
+          vType: vType,
           type: vType, // Also include as 'type' for backward compatibility
-          result: verification.result,
-          notes: verification.notes
-        };
-      });
+          result: result,
+          notes: notes
+        });
+      }
+      
+      // Process AuthenticityConfirmed events (add as AUTHENTICITY verification)
+      for (const event of authenticityEvents) {
+        const block = await this.provider.getBlock(event.blockNumber);
+        // Check if we already have this in ProductVerified events
+        const exists = verifications.some(v => 
+          v.timestamp === Number(block.timestamp) && 
+          v.vType === 2 && // AUTHENTICITY
+          v.verifier.toLowerCase() === event.args.verifier.toLowerCase()
+        );
+        
+        if (!exists) {
+          verifications.push({
+            verifier: event.args.verifier,
+            timestamp: Number(block.timestamp),
+            vType: 2, // AUTHENTICITY
+            type: 2,
+            result: true,
+            notes: 'Authenticity confirmed'
+          });
+        }
+      }
+      
+      // Process ComplianceChecked events (add as REGULATORY_APPROVAL verification)
+      for (const event of complianceEvents) {
+        const block = await this.provider.getBlock(event.blockNumber);
+        // Check if we already have this in ProductVerified events
+        const exists = verifications.some(v => 
+          v.timestamp === Number(block.timestamp) && 
+          v.vType === 1 && // REGULATORY_APPROVAL
+          v.verifier.toLowerCase() === event.args.regulator.toLowerCase()
+        );
+        
+        if (!exists) {
+          verifications.push({
+            verifier: event.args.regulator,
+            timestamp: Number(block.timestamp),
+            vType: 1, // REGULATORY_APPROVAL
+            type: 1,
+            result: event.args.compliant,
+            notes: 'Compliance check'
+          });
+        }
+      }
+      
+      // Sort by timestamp (chronological order)
+      verifications.sort((a, b) => a.timestamp - b.timestamp);
+      
+      return verifications;
     } catch (error) {
       throw new Error(`Failed to get verification history: ${error.message}`);
     }

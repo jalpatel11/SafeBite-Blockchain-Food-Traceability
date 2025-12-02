@@ -78,12 +78,21 @@ async function performQualityCheck(req, res) {
     // Call contractService.performQualityCheck()
     const result = await contractService.performQualityCheck(signerAddress, productId, qualityScore, notes);
     
-    // Return transaction hash
+    // Build response message
+    let message = `Quality check completed with score ${qualityScore}/100`;
+    if (result.autoVerified && result.isAuthentic) {
+      message += '. Product authenticity automatically verified!';
+    }
+    
+    // Return transaction hash and authenticity status
     res.json({
       success: true,
       transactionHash: result.transactionHash,
+      qualityScore: qualityScore,
       passed: qualityScore >= 50,
-      message: 'Quality check performed'
+      isAuthentic: result.isAuthentic || false,
+      autoVerified: result.autoVerified || false,
+      message: message
     });
   } catch (error) {
     res.status(500).json(formatError(error, 'performQualityCheck'));

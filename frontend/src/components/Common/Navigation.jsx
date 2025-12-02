@@ -100,6 +100,14 @@ export default function Navigation() {
                 Consumer
                 {role === ROLES.CONSUMER && <span className="role-indicator">You</span>}
               </Link>
+
+              <Link
+                to="/roles"
+                className={`nav-link ${isActive('/roles') ? 'active' : ''}`}
+                title="Role Management"
+              >
+                Roles
+              </Link>
             </div>
 
             <div className="nav-wallet">

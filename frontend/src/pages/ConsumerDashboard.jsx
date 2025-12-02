@@ -149,10 +149,20 @@ export default function ConsumerDashboard() {
    * @param {string} scannedData - The product ID from the scanned QR code
    */
   const handleScan = useCallback((scannedData) => {
-    const id = parseInt(scannedData);
-    if (id) {
+    if (!scannedData) {
+      setError('No data scanned from QR code');
+      return;
+    }
+    
+    const id = parseInt(scannedData, 10);
+    if (!isNaN(id) && id >= 0) {
+      console.log('QR scan successful, verifying product ID:', id);
       setProductId(id.toString());
+      setError(null); // Clear any previous errors
       handleVerify(id.toString());
+    } else {
+      setError(`Invalid product ID scanned: ${scannedData}`);
+      console.error('Invalid product ID from QR scan:', scannedData);
     }
   }, [handleVerify]);
 

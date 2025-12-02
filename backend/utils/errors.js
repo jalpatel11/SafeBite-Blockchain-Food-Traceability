@@ -10,10 +10,9 @@
  * @param {string} context - Context where error occurred
  * @returns {Object} Formatted error response
  * 
- * TODO:
- * 1. Parse error message from blockchain transactions
- * 2. Extract user-friendly error messages
- * 3. Return formatted error object with status code
+ * This function formats errors from blockchain transactions and other sources
+ * into a consistent API response format. It extracts user-friendly messages
+ * from contract revert errors and other error types.
  */
 function formatError(error, context = 'Unknown') {
   // Parse different error types

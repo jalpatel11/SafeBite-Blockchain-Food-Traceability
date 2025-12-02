@@ -19,6 +19,7 @@ import RegulatorDashboard from './pages/RegulatorDashboard';
 import ConsumerDashboard from './pages/ConsumerDashboard';
 import ProductVerification from './pages/ProductVerification';
 import TransferProduct from './pages/TransferProduct';
+import RoleManagement from './pages/RoleManagement';
 
 /**
  * App Component
@@ -42,6 +43,7 @@ function App() {
           <Route path="/verify/:productId" element={<ProductVerification />} />
           <Route path="/verify" element={<ProductVerification />} />
           <Route path="/transfer" element={<TransferProduct />} />
+          <Route path="/roles" element={<RoleManagement />} />
         </Routes>
       </div>
     </BrowserRouter>

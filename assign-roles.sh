@@ -22,15 +22,15 @@ assign_role() {
         }")
     
     if echo "$response" | grep -q "success.*true"; then
-        echo "✅ $role_name assigned to $address"
+        echo " $role_name assigned to $address"
     else
-        echo "❌ Failed: $response"
+        echo " Failed: $response"
     fi
     echo ""
 }
 
 if ! curl -s http://localhost:3000/health > /dev/null; then
-    echo "❌ Backend not running on http://localhost:3000"
+    echo " Backend not running on http://localhost:3000"
     exit 1
 fi
 
@@ -39,5 +39,5 @@ assign_role "$ACCOUNT_2" 1
 assign_role "$ACCOUNT_3" 2
 assign_role "$ACCOUNT_4" 3
 
-echo "✅ Role assignment complete"
+echo " Role assignment complete"
 

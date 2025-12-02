@@ -70,7 +70,7 @@ export default function ProductCard({ product, onViewDetails, onTransfer, onQual
             <span className="info-label">Ownership:</span>
             <span className={`info-value ${product.currentOwner.toLowerCase() === currentAccount.toLowerCase() ? 'ownership-current' : 'ownership-transferred'}`}>
               {product.currentOwner.toLowerCase() === currentAccount.toLowerCase() 
-                ? '✓ You are the current owner' 
+                ? 'You are the current owner' 
                 : 'Transferred to another party'}
             </span>
           </div>

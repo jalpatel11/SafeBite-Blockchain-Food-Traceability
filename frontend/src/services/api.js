@@ -186,6 +186,21 @@ export const roleAPI = {
    */
   getMyRole: async (address) => {
     return await api.get('/api/roles/my-role', { params: { address } });
+  },
+
+  /**
+   * Grant role using deployer account (Development only)
+   * POST /api/roles/grant-dev
+   * 
+   * Body: { accountAddress, role }
+   * 
+   * Automatically uses deployer account as signer.
+   */
+  grantRoleDev: async (accountAddress, role) => {
+    return await api.post('/api/roles/grant-dev', {
+      accountAddress,
+      role
+    });
   }
 };
 

@@ -178,6 +178,50 @@ function mergeCertificateMetadata(existingHash, type, newHash) {
   return JSON.stringify(metadata);
 }
 
+/**
+ * Format Unix timestamp to human-readable date string
+ * 
+ * @param {number|string} timestamp - Unix timestamp (in seconds or milliseconds)
+ * @returns {string} Formatted date string like "Jan 15, 2024, 2:30:45 PM"
+ * 
+ * Intelligently detects if timestamp is in seconds (if less than year 2000 in milliseconds)
+ * and converts it to milliseconds before formatting.
+ * Returns 'N/A' if timestamp is invalid.
+ */
+function formatDate(timestamp) {
+  if (!timestamp && timestamp !== 0) {
+    return 'N/A';
+  }
+  
+  const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : Number(timestamp);
+  
+  if (isNaN(ts) || ts <= 0) {
+    return 'N/A';
+  }
+  
+  let date;
+  // If timestamp is less than year 2000 in milliseconds, assume it's in seconds
+  if (ts < 946684800000) { // Year 2000 in milliseconds
+    date = new Date(ts * 1000);
+  } else {
+    date = new Date(ts);
+  }
+  
+  if (isNaN(date.getTime())) {
+    return 'N/A';
+  }
+  
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
 module.exports = {
   loadContractAddresses,
   loadContractABI,
@@ -185,6 +229,7 @@ module.exports = {
   isValidProductId,
   getDeployerAddress,
   generateCertificateHash,
-  mergeCertificateMetadata
+  mergeCertificateMetadata,
+  formatDate
 };
 

@@ -44,7 +44,8 @@ uint256 timestamp                                  ;       // When the transfer 
 string shipmentDetails                             ;  // Shipping info like tracking number, carrier
 }
 
-// Verification struct stores verification events
+// Verification struct - kept for backward compatibility with view functions
+// Note: Verification history is now retrieved from events, not stored in arrays
 struct Verification {
 address verifier                                  ;        // Who performed the verification
 uint256 timestamp                                 ;       // When verification happened
@@ -60,14 +61,14 @@ SafeBiteAccessRoles public accessControl               ;
 mapping(uint256 => Product) private _products                   ;                    // Product ID -> Product info
 mapping(uint256 => address) private _currentOwners              ;               // Product ID -> Current owner
 mapping(uint256 => ProductStatus) private _productStatuses      ;       // Product ID -> Current status
-mapping(uint256 => Transfer[]) private _transferHistory         ;          // Product ID -> Transfer history array
-mapping(uint256 => Verification[]) private _verificationHistory ;  // Product ID -> Verification history array
 mapping(uint256 => bool) private _authenticityFlags             ;              // Product ID -> Is authentic flag
+mapping(uint256 => bool) private _hasQualityCheckPassed         ;  // Product ID -> Quality check passed flag
+mapping(uint256 => bool) private _hasComplianceCheckPassed     ;  // Product ID -> Compliance check passed flag
 
 // Counter for generating unique product IDs
 uint256 private _productCounter              ;
 
-// Events for tracking important state changes
+// Events track all state changes - backend queries these events to retrieve history
 event ProductRegistered(
 uint256 indexed productId,
 address indexed producer,
@@ -165,7 +166,7 @@ string memory metadataHash
 require(bytes(name).length > 0, "SafeBiteSupplyChain: product name cannot be empty");
 require(bytes(batchId).length > 0, "SafeBiteSupplyChain: batch ID cannot be empty");
 require(bytes(origin).length > 0, "SafeBiteSupplyChain: origin cannot be empty");
-// Note: metadataHash can be empty initially and added later via updateProductMetadata
+// metadataHash can be empty initially and added later when certificates are generated
 
 // Increment product counter
 _productCounter++            ;
@@ -269,13 +270,7 @@ newStatus = ProductStatus.RECEIVED;
 } else {
 newStatus = ProductStatus.DELIVERED;
 }
-Transfer memory transfer = Transfer({
-from: from,
-to: to,
-timestamp: block.timestamp,
-shipmentDetails: shipmentDetails
-});
-_transferHistory[productId].push(transfer);
+// Update ownership and status - history recorded via events
 _currentOwners[productId] = to;
 _productStatuses[productId] = newStatus;
 emit OwnershipTransferred(productId, from, to, shipmentDetails);
@@ -311,13 +306,7 @@ newStatus = ProductStatus.RECEIVED;
 } else {
 newStatus = ProductStatus.DELIVERED;
 }
-Transfer memory transfer = Transfer({
-from: from,
-to: to,
-timestamp: block.timestamp,
-shipmentDetails: shipmentDetails
-});
-_transferHistory[productId].push(transfer);
+// Update ownership and status - history recorded via events
 _currentOwners[productId] = to;
 _productStatuses[productId] = newStatus;
 emit OwnershipTransferred(productId, from, to, shipmentDetails);
@@ -359,46 +348,20 @@ emit StatusUpdated(productId, oldStatus, newStatus, msg.sender);
 // Returns true if product is authentic
 function verifyAuthenticity(
 uint256 productId,
-string memory notes
+string memory /* notes */
 ) external productExists(productId) returns (bool isValid) {
 Product memory product = _products[productId];
-Verification[] memory verifications = _verificationHistory[productId];
-bool hasQualityCheck = false;
-bool hasComplianceCheck = false;
-bool qualityPassed = false;
-bool compliancePassed = false;
-// Check verification history for quality and compliance checks
-for (uint256 i = 0; i < verifications.length; i++) {
-if (verifications[i].vType == VerificationType.QUALITY_CHECK) {
-hasQualityCheck = true;
-if (verifications[i].result) {
-qualityPassed = true;
-}
-}
-if (verifications[i].vType == VerificationType.REGULATORY_APPROVAL) {
-hasComplianceCheck = true;
-if (verifications[i].result) {
-compliancePassed = true;
-}
-}
-}
+// Check if quality and compliance checks have passed
+bool hasQualityCheck = _hasQualityCheckPassed[productId];
+bool hasComplianceCheck = _hasComplianceCheckPassed[productId];
 // Product is authentic only if:
-// 1. Both quality check and compliance check have been performed
-// 2. Both checks passed (quality score >= 50, compliance = true)
-// 3. Metadata hash exists (contains certificate information)
-// 4. Producer address is valid
+// 1. Both quality check and compliance check have been performed and passed
+// 2. Metadata hash exists (contains certificate information)
+// 3. Producer address is valid
 bool isAuthentic = hasQualityCheck && hasComplianceCheck &&
-qualityPassed && compliancePassed &&
 bytes(product.metadataHash).length > 0 &&
 product.producer != address(0);
-Verification memory verification = Verification({
-verifier: msg.sender,
-timestamp: block.timestamp,
-vType: VerificationType.AUTHENTICITY,
-result: isAuthentic,
-notes: notes
-});
-_verificationHistory[productId].push(verification);
+// Set authenticity flag and emit event
 if (isAuthentic) {
 _authenticityFlags[productId] = true;
 emit AuthenticityConfirmed(productId, msg.sender);
@@ -415,7 +378,7 @@ return isAuthentic;
 function performQualityCheck(
 uint256 productId,
 uint8 qualityScore,
-string memory notes,
+string memory /* notes */,
 string memory certificateHash
 ) external productExists(productId) {
 require(
@@ -425,21 +388,38 @@ accessControl.hasRole(msg.sender, SafeBiteAccessRoles.Role.REGULATOR),
 );
 require(qualityScore <= 100, "SafeBiteSupplyChain: quality score must be 0-100");
 bool passed = qualityScore >= 50;
-Verification memory verification = Verification({
-verifier: msg.sender,
-timestamp: block.timestamp,
-vType: VerificationType.QUALITY_CHECK,
-result: passed,
-notes: notes
-});
-_verificationHistory[productId].push(verification);
+Product memory product = _products[productId];
+// Set flag to indicate quality check passed
+if (passed) {
+_hasQualityCheckPassed[productId] = true;
+}
 // Store certificate hash in metadataHash if quality check passes and hash is provided
 // Backend should merge with existing metadataHash (e.g., from compliance) before calling
 if (passed && bytes(certificateHash).length > 0) {
 _products[productId].metadataHash = certificateHash;
 emit ProductMetadataUpdated(productId, certificateHash);
 }
+// Emit event to record this quality check - events are stored in logs, not expensive contract storage
 emit ProductVerified(productId, msg.sender, VerificationType.QUALITY_CHECK, passed);
+// Auto-verify authenticity if regulator has completed both quality and compliance checks
+// This works regardless of which check is done first
+if (passed && accessControl.hasRole(msg.sender, SafeBiteAccessRoles.Role.REGULATOR)) {
+// Check if both verification checks have passed
+bool hasQualityCheck = _hasQualityCheckPassed[productId];
+bool hasComplianceCheck = _hasComplianceCheckPassed[productId];
+// Get current metadataHash (may have been updated above)
+string memory currentMetadataHash = _products[productId].metadataHash;
+// Auto-verify if all conditions are met
+bool isAuthentic = hasQualityCheck && hasComplianceCheck &&
+bytes(currentMetadataHash).length > 0 &&
+product.producer != address(0);
+if (isAuthentic && !_authenticityFlags[productId]) {
+_authenticityFlags[productId] = true;
+emit AuthenticityConfirmed(productId, msg.sender);
+// Record verification in event logs
+emit ProductVerified(productId, msg.sender, VerificationType.AUTHENTICITY, true);
+}
+}
 }
 
 // Check regulatory compliance
@@ -453,14 +433,10 @@ bool compliant,
 string memory certificateHash
 ) external productExists(productId) onlyRegulator {
 Product memory product = _products[productId];
-Verification memory verification = Verification({
-verifier: msg.sender,
-timestamp: block.timestamp,
-vType: VerificationType.REGULATORY_APPROVAL,
-result: compliant,
-notes: certificateHash
-});
-_verificationHistory[productId].push(verification);
+// Set flag to indicate compliance check passed
+if (compliant) {
+_hasComplianceCheckPassed[productId] = true;
+}
 // Store certificate hash in metadataHash if compliant
 // Backend should merge with existing metadataHash (e.g., quality certificate) before calling
 if (compliant && bytes(certificateHash).length > 0) {
@@ -472,46 +448,19 @@ emit ProductVerified(productId, msg.sender, VerificationType.REGULATORY_APPROVAL
 // Auto-verify authenticity if both quality and compliance checks have passed
 // This happens automatically when compliance check completes successfully
 if (compliant) {
-// Get updated verification history (includes the compliance check we just added)
-Verification[] memory verifications = _verificationHistory[productId];
-bool hasQualityCheck = false;
-bool hasComplianceCheck = false;
-bool qualityPassed = false;
-bool compliancePassed = false;
-// Check verification history for quality and compliance checks
-for (uint256 i = 0; i < verifications.length; i++) {
-if (verifications[i].vType == VerificationType.QUALITY_CHECK) {
-hasQualityCheck = true;
-if (verifications[i].result) {
-qualityPassed = true;
-}
-}
-if (verifications[i].vType == VerificationType.REGULATORY_APPROVAL) {
-hasComplianceCheck = true;
-if (verifications[i].result) {
-compliancePassed = true;
-}
-}
-}
+// Check verification status using boolean flags
+bool hasQualityCheck = _hasQualityCheckPassed[productId];
+bool hasComplianceCheck = _hasComplianceCheckPassed[productId];
 // Get current metadataHash (may have been updated above)
 string memory currentMetadataHash = _products[productId].metadataHash;
 // Auto-verify if all conditions are met
 bool isAuthentic = hasQualityCheck && hasComplianceCheck &&
-qualityPassed && compliancePassed &&
 bytes(currentMetadataHash).length > 0 &&
 product.producer != address(0);
 if (isAuthentic && !_authenticityFlags[productId]) {
 _authenticityFlags[productId] = true;
 emit AuthenticityConfirmed(productId, msg.sender);
-// Also record an authenticity verification event
-Verification memory autoVerification = Verification({
-verifier: msg.sender,
-timestamp: block.timestamp,
-vType: VerificationType.AUTHENTICITY,
-result: true,
-notes: "Auto-verified: Quality and compliance checks completed"
-});
-_verificationHistory[productId].push(autoVerification);
+// Record verification in event logs
 emit ProductVerified(productId, msg.sender, VerificationType.AUTHENTICITY, true);
 }
 }
@@ -523,9 +472,10 @@ return _currentOwners[productId]                                                
 }
 
 // Get complete transfer history for a product
-// Returns array of all Transfer records showing ownership changes
+// Returns empty array - backend queries OwnershipTransferred events for transfer history
 function getTransferHistory(uint256 productId) external view productExists(productId) returns (Transfer[] memory transfers) {
-return _transferHistory[productId];
+Transfer[] memory emptyTransfers = new Transfer[](0);
+return emptyTransfers;
 }
 
 // Get current status of a product
@@ -534,9 +484,10 @@ return _productStatuses[productId]                                              
 }
 
 // Get all verification records for a product
-// Shows quality checks, compliance checks, authenticity verifications
+// Returns empty array - backend queries ProductVerified, AuthenticityConfirmed, and ComplianceChecked events for verification history
 function getVerificationHistory(uint256 productId) external view productExists(productId) returns (Verification[] memory verifications) {
-return _verificationHistory[productId];
+Verification[] memory emptyVerifications = new Verification[](0);
+return emptyVerifications;
 }
 
 // Check if product has been verified as authentic
@@ -545,13 +496,11 @@ return _authenticityFlags[productId];
 }
 
 // Get product journey as readable strings
-// Combines registration, transfers, and status updates into a timeline
-// Returns array of strings describing each event in chronological order
+// Returns only registration event - backend queries ProductRegistered, OwnershipTransferred, and StatusUpdated events for full journey
 function getProductJourney(uint256 productId) external view productExists(productId) returns (string[] memory journey) {
 Product memory product = _products[productId];
-uint256 transferCount = _transferHistory[productId].length;
-uint256 totalEvents = 1 + transferCount;
-string[] memory events = new string[](totalEvents);
+// Return only the initial registration - backend will query events for full history
+string[] memory events = new string[](1);
 events[0] = string(abi.encodePacked(
 "Product registered: ",
 product.name,
@@ -560,26 +509,14 @@ product.batchId,
 ") by producer at ",
 uint2str(product.createdAt)
 ));
-for (uint256 i = 0; i < transferCount; i++) {
-Transfer memory transfer = _transferHistory[productId][i];
-events[i + 1] = string(abi.encodePacked(
-"Transferred from ",
-addressToString(transfer.from),
-" to ",
-addressToString(transfer.to),
-" at ",
-uint2str(transfer.timestamp)
-));
-}
 return events;
 }
 
 // Get complete provenance record
-// Combines all product data, transfers, status updates, and verifications
-// Returns as structured data (JSON-like string)
-// Note: Consider gas costs for large strings
+// Returns current product state only - backend queries events for complete provenance
 function getCompleteProvenance(uint256 productId) external view productExists(productId) returns (string memory provenance) {
 Product memory product = _products[productId];
+// Return current state only - backend queries events for complete history
 string memory result = string(abi.encodePacked(
 '{"productId":',
 uint2str(productId),
@@ -601,52 +538,8 @@ addressToString(_currentOwners[productId]),
 uint2str(uint256(_productStatuses[productId])),
 ',"authentic":',
 _authenticityFlags[productId] ? 'true' : 'false',
-',"transfers":['));
-uint256 transferCount = _transferHistory[productId].length;
-for (uint256 i = 0; i < transferCount; i++) {
-Transfer memory transfer = _transferHistory[productId][i];
-if (i > 0) {
-result = string(abi.encodePacked(result, ','));
-}
-result = string(abi.encodePacked(
-result,
-'{"from":"',
-addressToString(transfer.from),
-'","to":"',
-addressToString(transfer.to),
-'","timestamp":',
-uint2str(transfer.timestamp),
-',"details":"',
-transfer.shipmentDetails,
-'"}'
+',"transfers":[],"verifications":[]}'
 ));
-}
-result = string(abi.encodePacked(result, '],"verifications":['));
-uint256 verificationCount = _verificationHistory[productId].length;
-for (uint256 i = 0; i < verificationCount; i++) {
-Verification memory verification = _verificationHistory[productId][i];
-if (i > 0) {
-result = string(abi.encodePacked(result, ','));
-}
-string memory vTypeStr = verification.vType == VerificationType.QUALITY_CHECK ? 'QUALITY_CHECK' :
-verification.vType == VerificationType.REGULATORY_APPROVAL ? 'REGULATORY_APPROVAL' :
-verification.vType == VerificationType.AUTHENTICITY ? 'AUTHENTICITY' : 'COMPLIANCE';
-result = string(abi.encodePacked(
-result,
-'{"verifier":"',
-addressToString(verification.verifier),
-'","timestamp":',
-uint2str(verification.timestamp),
-',"type":"',
-vTypeStr,
-'","result":',
-verification.result ? 'true' : 'false',
-',"notes":"',
-verification.notes,
-'"}'
-));
-}
-result = string(abi.encodePacked(result, ']}'));
 return result;
 }
 // Helper function to convert uint256 to string

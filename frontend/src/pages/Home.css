@@ -24,23 +24,34 @@
   margin: 4rem auto;
   text-align: center;
   color: white;
+  position: relative;
+  z-index: 1;
 }
 
 .home-hero h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
   font-weight: 700;
+  color: white !important;
+  -webkit-text-fill-color: white !important;
+  background: none !important;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .hero-subtitle {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  opacity: 0.9;
+  opacity: 0.95;
+  color: white !important;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 500;
 }
 
 .hero-description {
   font-size: 1.1rem;
-  opacity: 0.8;
+  opacity: 0.9;
+  color: white !important;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .home-loading {
@@ -49,7 +60,14 @@
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  color: white;
+  color: white !important;
+  position: relative;
+  z-index: 1;
+}
+
+.home-loading p {
+  color: white !important;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .loading-spinner {
@@ -76,24 +94,34 @@
   text-align: center;
   color: white;
   margin-bottom: 3rem;
+  position: relative;
+  z-index: 1;
 }
 
 .home-header h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
   font-weight: 700;
+  color: white !important;
+  -webkit-text-fill-color: white !important;
+  background: none !important;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .welcome-message {
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
-  opacity: 0.9;
+  opacity: 0.95;
+  color: white !important;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .account-info {
   font-size: 1rem;
-  opacity: 0.8;
+  opacity: 0.9;
   margin-top: 1rem;
+  color: white !important;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .account-address {
