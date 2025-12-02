@@ -43,7 +43,8 @@ frontend/
 │   │   ├── RegulatorDashboard.jsx
 │   │   ├── ConsumerDashboard.jsx
 │   │   ├── ProductVerification.jsx
-│   │   └── TransferProduct.jsx
+│   │   ├── TransferProduct.jsx
+│   │   └── RoleManagement.jsx
 │   │
 │   ├── services/                 # External service integrations
 │   │   ├── api.js               # Backend API client
@@ -150,6 +151,7 @@ Each role has a dedicated dashboard page:
 - *RetailerDashboard*: Inventory management and quality checks
 - *RegulatorDashboard*: Compliance auditing and oversight
 - *ConsumerDashboard*: Product verification and provenance viewing
+- *RoleManagement*: Role assignment interface for administrators
 
 ### Components
 

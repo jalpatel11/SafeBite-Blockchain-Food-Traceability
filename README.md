@@ -7,8 +7,9 @@ SafeBite is an enterprise-grade blockchain solution for food supply chain tracea
 ## Key Features
 
 - **Role-Based Access Control**: Five distinct roles (Producer, Distributor, Retailer, Regulator, Consumer) with granular permissions
+- **Role Management Dashboard**: Web-based interface for assigning roles to accounts
 - **Product Lifecycle Management**: Complete tracking from registration through delivery
-- **Immutable Provenance Records**: All product events permanently stored on blockchain
+- **Event-Based History Tracking**: Gas-efficient provenance records using blockchain events instead of storage arrays
 - **Quality & Compliance Verification**: Automated certificate generation and authenticity verification
 - **QR Code Integration**: Product identification and consumer verification via QR scanning
 - **Real-Time Status Tracking**: Product status updates throughout the supply chain
@@ -21,6 +22,7 @@ The system is built on a four-tier architecture:
 Solidity smart contracts deployed on Ethereum-compatible blockchain:
 - **SafeBiteAccessRoles.sol**: Role-based access control and permission management
 - **SafeBiteSupplyChain.sol**: Core business logic for product lifecycle, transfers, and verification
+- **Event-Based Architecture**: History tracking via events for gas efficiency
 
 ### 2. Backend API Layer
 Express.js REST API server providing:
@@ -32,6 +34,7 @@ Express.js REST API server providing:
 ### 3. Frontend Application Layer
 React.js web application featuring:
 - Role-based dashboards
+- Role management interface
 - MetaMask wallet integration
 - QR code scanning and generation
 - Real-time product verification
@@ -248,11 +251,13 @@ Products can be transferred between stakeholders with automatic status updates a
 - **Authenticity Verification**: Automatic verification when quality and compliance checks pass
 
 ### Provenance Tracking
-Complete immutable history of:
+Complete immutable history retrieved from blockchain events:
 - Product registration events
 - Ownership transfers
 - Status updates
 - Verification records
+
+History is stored in event logs rather than contract storage arrays, significantly reducing gas costs while maintaining full traceability.
 
 ## API Documentation
 

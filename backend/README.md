@@ -13,6 +13,13 @@ The backend follows a layered architecture pattern:
 - **Services**: Implement business logic and smart contract interactions
 - **Utils**: Provide shared utilities for error handling and data processing
 
+### Event-Based History Retrieval
+
+The backend queries blockchain events to retrieve product history instead of reading from contract storage arrays. This approach significantly reduces gas costs:
+- Transfer history: Queries `OwnershipTransferred` events
+- Verification history: Queries `ProductVerified`, `AuthenticityConfirmed`, and `ComplianceChecked` events
+- Product journey: Queries `ProductRegistered`, `OwnershipTransferred`, and `StatusUpdated` events
+
 ## Project Structure
 
 ```
@@ -157,6 +164,7 @@ Manages all smart contract interactions:
 - Handles transaction signing and confirmation
 - Formats contract responses for API consumption
 - Manages certificate generation and metadata merging
+- Queries blockchain events for history retrieval (transfers, verifications, journey)
 
 ### qrService.js
 
