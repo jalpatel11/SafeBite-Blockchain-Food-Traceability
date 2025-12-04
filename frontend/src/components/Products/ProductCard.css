@@ -183,6 +183,7 @@
   border-top: 2px solid var(--border-color);
   width: 100%;
   box-sizing: border-box;
+  align-items: stretch;
 }
 
 .btn-primary {
@@ -194,9 +195,8 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all var(--transition-base);
-  flex: 1 1 calc(50% - 0.25rem);
+  flex: 1 1 auto;
   min-width: 110px;
-  max-width: calc(50% - 0.25rem);
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
@@ -240,9 +240,8 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all var(--transition-base);
-  flex: 1 1 calc(50% - 0.25rem);
+  flex: 1 1 auto;
   min-width: 110px;
-  max-width: calc(50% - 0.25rem);
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
@@ -287,13 +286,14 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all var(--transition-base);
-  flex: 1 1 calc(50% - 0.25rem);
-  min-width: 110px;
-  max-width: calc(50% - 0.25rem);
+  flex: 1 1 auto;
+  min-width: 140px;
   font-weight: 600;
   white-space: nowrap;
   box-sizing: border-box;
   box-shadow: 0 2px 8px var(--shadow-sm);
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .btn-compliance:hover:not(:disabled) {
@@ -321,7 +321,8 @@
   .btn-primary,
   .btn-secondary,
   .btn-outline,
-  .btn-quality {
+  .btn-quality,
+  .btn-compliance {
     flex: 1 1 100%;
     max-width: 100%;
     width: 100%;
