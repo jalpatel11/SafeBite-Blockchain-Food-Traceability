@@ -581,6 +581,9 @@ class ContractService {
       // Wait for transaction to be mined
       const receipt = await tx.wait();
       
+      // Determine if quality check passed (score >= 50)
+      const passed = qualityScore >= 50;
+      
       // Check if authenticity was auto-verified after quality check (if done by regulator)
       let isAuthentic = false;
       let autoVerified = false;
