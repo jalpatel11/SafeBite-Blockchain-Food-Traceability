@@ -125,7 +125,20 @@ cd ..
 
 **Note:** This process may take a few minutes as it downloads all required packages.
 
-### Step 3: Start Local Blockchain Network
+### Step 3: Compile Smart Contracts
+
+Compile the smart contracts before deployment:
+
+```bash
+# From project root directory
+npm run compile
+```
+
+**Expected Output:** You should see "Compiled X Solidity file(s) successfully"
+
+This compiles the Solidity contracts and generates the necessary artifacts for deployment.
+
+### Step 4: Start Local Blockchain Network
 
 Open a new terminal window and start the Hardhat local blockchain:
 
@@ -138,7 +151,7 @@ npm run node
 
 This creates a local Ethereum-compatible blockchain network running on port 8545 with Chain ID 1337. Keep this terminal open.
 
-### Step 4: Deploy Smart Contracts
+### Step 5: Deploy Smart Contracts
 
 Open a second terminal window and deploy the smart contracts:
 
@@ -151,7 +164,7 @@ npm run deploy:local
 
 **Important:** Note the contract addresses displayed, as you'll need them for configuration.
 
-### Step 5: Configure Backend Environment
+### Step 6: Configure Backend Environment
 
 1. Navigate to the backend directory:
 ```bash
@@ -183,7 +196,7 @@ npm start
 
 Keep this terminal open.
 
-### Step 6: Configure Frontend Environment
+### Step 7: Configure Frontend Environment
 
 1. Open a third terminal window and navigate to the frontend directory:
 ```bash
@@ -216,7 +229,7 @@ npm run dev
 
 The application will automatically open in your browser, or navigate to http://localhost:5173
 
-### Step 7: Assign Roles to Test Accounts
+### Step 8: Assign Roles to Test Accounts
 
 Open a fourth terminal window and run the role assignment script:
 
@@ -233,7 +246,7 @@ This assigns roles to the default Hardhat test accounts:
 - Account 3: RETAILER
 - Account 4: REGULATOR
 
-### Step 8: Configure MetaMask Wallet
+### Step 9: Configure MetaMask Wallet
 
 1. **Install MetaMask Extension**
    - Install MetaMask from https://metamask.io
