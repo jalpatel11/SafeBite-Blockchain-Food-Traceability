@@ -2,7 +2,18 @@
 
 ## Overview
 
-The SafeBite backend is an Express.js REST API server that provides an abstraction layer between the frontend application and blockchain smart contracts. It handles smart contract interactions, business logic, data validation, and additional services such as QR code generation.
+The SafeBite backend is an Express.js REST API server that serves as the middleware between the frontend web application and the blockchain smart contracts. This backend layer abstracts the complexity of blockchain interactions, providing a clean REST API interface for the frontend to consume.
+
+The backend handles all smart contract operations including product registration, ownership transfers, quality checks, compliance verification, and role management. It also provides additional services such as QR code generation and event-based history retrieval from the blockchain.
+
+**Key Responsibilities:**
+- Process HTTP requests from the frontend application
+- Interact with smart contracts using Ethers.js
+- Validate input data before blockchain transactions
+- Format blockchain responses for frontend consumption
+- Generate QR codes for product verification
+- Query blockchain events for product history
+- Handle errors and provide user-friendly error messages
 
 ## Architecture
 
